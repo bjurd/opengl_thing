@@ -10,6 +10,12 @@
 
 #include "util.h"
 
+vec3 up = { 0, 1.f, 0 };
+
+vec3 cameraPos = { 0, 0, 3.f };
+vec3 cameraFront = { 0, 0, -1.f };
+vec3 cameraUp = { 0, 1.f, 0 };
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -17,8 +23,39 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow *window)
 {
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, 1);
+	const float cameraSpeed = 0.05f;
+
+	vec3 moveDelta;
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		glm_vec3_scale(cameraFront, cameraSpeed, moveDelta);
+		glm_vec3_add(cameraPos, moveDelta, cameraPos);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		glm_vec3_scale(cameraFront, cameraSpeed, moveDelta);
+		glm_vec3_sub(cameraPos, moveDelta, cameraPos);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		glm_vec3_cross(cameraFront, cameraUp, moveDelta);
+		glm_vec3_normalize(moveDelta);
+		glm_vec3_scale(moveDelta, cameraSpeed, moveDelta);
+
+		glm_vec3_sub(cameraPos, moveDelta, cameraPos);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		glm_vec3_cross(cameraFront, cameraUp, moveDelta);
+		glm_vec3_normalize(moveDelta);
+		glm_vec3_scale(moveDelta, cameraSpeed, moveDelta);
+
+		glm_vec3_add(cameraPos, moveDelta, cameraPos);
+	}
 }
 
 int main()
@@ -59,48 +96,48 @@ int main()
 	// };
 
 	float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-    };
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
 
 	unsigned int texture;
 	glGenTextures(1, &texture);
@@ -145,9 +182,9 @@ int main()
 	// glEnableVertexAttribArray(2);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	shader_t vertexShader;
 
@@ -165,6 +202,17 @@ int main()
 	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
 
+	// vec3 cameraDir;
+	// glm_vec3_sub(cameraPos, cameraTarget, cameraDir);
+	// glm_vec3_normalize(cameraDir);
+
+	// vec3 cameraRight;
+	// glm_vec3_cross(up, cameraDir, cameraRight);
+	// glm_vec3_normalize(cameraRight);
+
+	// vec3 cameraUp;
+	// glm_vec3_cross(cameraDir, cameraRight, cameraUp);
+
 	while(!glfwWindowShouldClose(window))
 	{
 		processInput(window);
@@ -175,11 +223,17 @@ int main()
 		mat4 trans;
 		glm_mat4_identity(trans);
 		glm_rotate(trans, glm_rad(25.f), (vec3){1.0f, 0.0f, 0.0f});
-		glm_rotate(trans, (float)glfwGetTime(), (vec3){0.0f, 1.0f, 0.0f});
+		//glm_rotate(trans, (float)glfwGetTime(), (vec3){0.0f, 1.0f, 0.0f});
+
+		// mat4 view;
+		// glm_mat4_identity(view);
+		// glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
+
+		vec3 cameraForward;
+		glm_vec3_add(cameraPos, cameraFront, cameraForward);
 
 		mat4 view;
-		glm_mat4_identity(view);
-		glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
+		glm_lookat(cameraPos, cameraForward, cameraUp, view);
 
 		mat4 projection;
 		glm_perspective(glm_rad(45.f), 800.f / 600.f, .1f, 100.f, projection);
