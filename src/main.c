@@ -10,6 +10,9 @@
 
 #include "util.h"
 
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
 vec3 up = { 0, 1.f, 0 };
 
 vec3 cameraPos = { 0, 0, 3.f };
@@ -23,7 +26,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow *window)
 {
-	const float cameraSpeed = 0.05f;
+	float cameraSpeed = 2.5f * deltaTime;
 
 	vec3 moveDelta;
 
@@ -215,6 +218,10 @@ int main()
 
 	while(!glfwWindowShouldClose(window))
 	{
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		processInput(window);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
