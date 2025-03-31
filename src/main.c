@@ -12,6 +12,9 @@
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float yaw = -90.0f;
+float pitch = 0.f;
+float lastX = 400, lastY = 300;
 
 vec3 up = { 0, 1.f, 0 };
 
@@ -61,6 +64,30 @@ void processInput(GLFWwindow *window)
 	}
 }
 
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	const float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f) pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	vec3 direction;
+	direction[0] = cos(glm_rad(yaw)) * cos(glm_rad(pitch));
+	direction[1] = sin(glm_rad(pitch));
+	direction[2] = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
+	glm_normalize_to(direction, cameraFront);
+}
+
 int main()
 {
 	glfwInit();
@@ -80,6 +107,9 @@ int main()
 	{
 		return -1;
 	}
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
