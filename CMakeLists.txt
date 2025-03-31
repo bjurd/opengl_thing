@@ -19,6 +19,7 @@ file(GLOB_RECURSE HEADERS
 include_directories("external/glfw-3.4/include")
 link_directories("external/glfw-3.4/lib-mingw-w64")
 
+include_directories("include")
 include_directories("include/glad/include")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
