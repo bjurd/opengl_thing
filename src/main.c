@@ -59,34 +59,21 @@ int main()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	unsigned int vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	shader_t vertexShader;
 
-	char* vertexCode = load_shader_code("../src/shaders/tri.vert");
+	if (!load_shader(GL_VERTEX_SHADER, 1, "../src/shaders/tri.vert", &vertexShader))
+		delete_shader(&vertexShader);
 
-	glShaderSource(vertexShader, 1, (const char**)&vertexCode, NULL);
-	glCompileShader(vertexShader);
+	shader_t fragmentShader;
 
-	free(vertexCode);
-
-	unsigned int fragmentShader;
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-	char* fragmentCode = load_shader_code("../src/shaders/tri.frag");
-
-	glShaderSource(fragmentShader, 1, (const char**)&fragmentCode, NULL);
-	glCompileShader(fragmentShader);
-
-	free(fragmentCode);
+	if (!load_shader(GL_FRAGMENT_SHADER, 1, "../src/shaders/tri.frag", &fragmentShader))
+		delete_shader(&fragmentShader);
 
 	unsigned int shaderProgram;
 	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
+	attach_shader(&vertexShader, shaderProgram);
+	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
-
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
 
 	while(!glfwWindowShouldClose(window))
 	{
