@@ -107,8 +107,9 @@ int main()
 
 		//tri
 		glUseProgram(shaderProgram);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 
 		//stuff
 		glfwSwapBuffers(window);
