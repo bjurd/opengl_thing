@@ -124,15 +124,25 @@ int main()
 
 		mat4 trans;
 		glm_mat4_identity(trans);
-		glm_translate(trans, (vec3){0.5f, -0.5f, 0.0f});
+		glm_rotate(trans, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
 
-		float angle = glfwGetTime() * glm_rad(50.0f);
-		glm_rotate(trans, angle, (vec3){0.0f, 0.0f, 1.0f});
+		mat4 view;
+		glm_mat4_identity(view);
+		glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
+
+		mat4 projection;
+		glm_perspective(glm_rad(45.f), 800.f / 600.f, .1f, 100.f, projection);
 
 		glUseProgram(shaderProgram);
 
-		unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, (float*)trans);
+		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+		unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
+		unsigned int projectLoc  = glGetUniformLocation(shaderProgram, "projection");
+
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)trans);
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)view);
+		glUniformMatrix4fv(projectLoc, 1, GL_FALSE, (float*)projection);
+
 
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
@@ -141,6 +151,11 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
+
 	glfwTerminate();
 
 	return 0;
