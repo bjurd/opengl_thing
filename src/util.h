@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <GLFW/glfw3.h>
 
+#define TINYOBJ_LOADER_C_IMPLEMENTATION
+#include <tinyobj_loader_c.h>
+
+#define OBJ_CHUNK_SIZE (8 * sizeof(float)) // 3 pos, 3 normal, 2 tex = 8
+
 void read_file(const char* path, char** data, size_t* length)
 {
 	FILE* file = fopen(path, "rb");
@@ -110,174 +115,89 @@ void attach_shader(shader_t* shader, unsigned int program)
 	delete_shader(shader);
 }
 
-static int parse_vertex_line(const char* line, float out[3])
+static void get_file_data(void* ctx, const char* filename, const int is_mtl, const char* obj_filename, char** data, size_t* len)
 {
-	return sscanf(line + 2, "%f %f %f", &out[0], &out[1], &out[2]) == 3;
+	(void)ctx;
+
+	printf("Getting file '%s'\n", filename);
+
+	read_file(filename, data, len);
 }
 
-static int count_face_triangles(const char* line)
+float* load_obj(const char* path, size_t* vertexCount)
 {
-	int count = 0;
+	tinyobj_attrib_t attrib;
+	tinyobj_shape_t* shapes;
+	size_t num_shapes;
+	tinyobj_material_t* materials;
+	size_t num_materials;
 
-	for (int i = 2; line[i] != '\0'; i++)
-		if (line[i] == ' ')
-			count++;
+	int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, path, get_file_data, NULL, TINYOBJ_FLAG_TRIANGULATE);
 
-	return (count >= 2) ? (count - 1) : 0;
-}
-
-static void process_face_line(const char* line, float* raw, int baseCount, float* out, int* index)
-{
-	int indices[16];
-	int count = 0;
-
-	char lineCopy[256];
-
-	strncpy(lineCopy, line, sizeof(lineCopy));
-	lineCopy[sizeof(lineCopy)-1] = '\0';
-
-	char* token;
-	char* temp;
-	token = strtok_r(lineCopy, " \t\n", &temp);
-
-	while ((token = strtok_r(NULL, " \t\n", &temp)) && count < 16)
+	if (ret != TINYOBJ_SUCCESS)
 	{
-		int idx;
+		printf("Failed to read file '%s'\n", path);
 
-		if (sscanf(token, "%d", &idx) == 1)
-			indices[count++] = idx;
+		*vertexCount = 0;
+
+		return NULL;
 	}
 
-	// i'm a huge fan
-	for (int i = 2; i < count; i++)
-	{
-		int tri[3] = { indices[0], indices[i - 1], indices[i] };
+	// printf("vertices: %zu\n", attrib.num_vertices);
+	// printf("normals: %zu\n", attrib.num_normals);
+	// printf("texcoords: %zu\n", attrib.num_texcoords);
+	// printf("faces: %zu\n", attrib.num_faces);
+	// printf("face vert counts: %zu\n", attrib.num_face_num_verts);
+	// printf("shapes: %zu\n", num_shapes);
 
-		for (int j = 0; j < 3; j++)
+	size_t totalVertices = attrib.num_face_num_verts * 3;
+
+	float* vertices = malloc(totalVertices * OBJ_CHUNK_SIZE);
+
+	if (!vertices)
+	{
+		printf("Failed to allocate for file '%s'\n", path);
+
+		tinyobj_attrib_free(&attrib);
+		tinyobj_shapes_free(shapes, num_shapes);
+		tinyobj_materials_free(materials, num_materials);
+
+		*vertexCount = 0;
+
+		return NULL;
+	}
+
+	size_t outOffset = 0;
+
+	for (size_t face = 0; face < attrib.num_face_num_verts; face++)
+	{
+		for (int vert = 0; vert < 3; vert++)
 		{
-			int k = tri[j] - 1;
+			tinyobj_vertex_index_t idx = attrib.faces[face * 3 + vert];
 
-			if (k >= 0 && k < baseCount)
-			{
-				out[*index * 3] = raw[k * 3];
-				out[*index * 3 + 1] = raw[k * 3 + 1];
-				out[*index * 3 + 2] = raw[k * 3 + 2];
+			// pos
+			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 0];
+			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 1];
+			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 2];
 
-				(*index)++;
-			}
-		}
-	}
-}
+			// normal
+			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 0];
+			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 1];
+			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 2];
 
-int load_obj(const char* path, float** vertices)
-{
-	FILE* file = fopen(path, "r");
-
-	if (!file)
-	{
-		*vertices = NULL;
-
-		return 0;
-	}
-
-	// get vertices
-	int capacity = 128, baseCount = 0;
-	float* rawVerts = malloc(capacity * 3 * sizeof(float));
-
-	if (!rawVerts)
-	{
-		fclose(file);
-
-		*vertices = NULL;
-
-		return 0;
-	}
-
-	int vertex = 0;
-	int hasFace = 0;
-	char line[256];
-
-	while (fgets(line, sizeof(line), file))
-	{
-		if (strncmp(line, "v ", 2) == 0)
-		{
-			float temp[3];
-
-			if (parse_vertex_line(line, temp))
-			{
-				if (baseCount >= capacity)
-				{
-					capacity *= 2;
-					float* newRaw = realloc(rawVerts, capacity * 3 * sizeof(float));
-
-					if (!newRaw)
-					{
-						free(rawVerts);
-						fclose(file);
-
-						*vertices = NULL;
-
-						return 0;
-					}
-
-					rawVerts = newRaw;
-				}
-
-				rawVerts[baseCount * 3 + 0] = temp[0];
-				rawVerts[baseCount * 3 + 1] = temp[1];
-				rawVerts[baseCount * 3 + 2] = temp[2];
-
-				baseCount++;
-			}
-		}
-		else if (strncmp(line, "f ", 2) == 0)
-		{
-			hasFace = 1;
-
-			int triCount = count_face_triangles(line);
-			vertex += triCount * 3;
+			// tex
+			vertices[outOffset++] = attrib.texcoords[2 * idx.vt_idx + 0];
+			vertices[outOffset++] = attrib.texcoords[2 * idx.vt_idx + 1];
 		}
 	}
 
-	if (!hasFace)
-	{
-		fclose(file);
+	tinyobj_attrib_free(&attrib);
+	tinyobj_shapes_free(shapes, num_shapes);
+	tinyobj_materials_free(materials, num_materials);
 
-		vertex = baseCount;
-		*vertices = rawVerts;
+	*vertexCount = totalVertices;
 
-		return vertex;
-	}
-
-	float* out = malloc(vertex * 3 * sizeof(float));
-
-	if (!out)
-	{
-		free(rawVerts);
-		fclose(file);
-
-		*vertices = NULL;
-
-		return 0;
-	}
-
-	// faces
-	rewind(file);
-
-	int outVertex = 0;
-
-	while (fgets(line, sizeof(line), file))
-	{
-		if (strncmp(line, "f ", 2) == 0)
-			process_face_line(line, rawVerts, baseCount, out, &outVertex);
-	}
-
-	fclose(file);
-	free(rawVerts);
-
-	*vertices = out;
-
-	return outVertex;
+	return vertices;
 }
 
 #endif

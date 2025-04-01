@@ -115,57 +115,26 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glEnable(GL_DEPTH_TEST);
 
-	float* vertices;
-	int vertexCount = load_obj("../src/models/monkey.obj", &vertices);
+	size_t vertexCount;
+	float* vertices = load_obj("../src/models/monkey.obj", &vertexCount);
 
-	printf("vertex: %d size: %d\n", vertexCount, vertexCount * 3 * sizeof(float));
-
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	int width, height, nrChannels;
-	unsigned char *data = stbi_load("../src/textures/wall.jpg", &width, &height, &nrChannels, 0);
-
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-		printf("Failed to load texture\n");
-
-	stbi_image_free(data);
+	printf("vertices: %d size: %d\n", vertexCount, vertexCount * OBJ_CHUNK_SIZE);
 
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	//glGenBuffers(1, &EBO);
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertexCount * 3 * sizeof(float), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * OBJ_CHUNK_SIZE, vertices, GL_STATIC_DRAW);
 
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	// glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	// glEnableVertexAttribArray(1);
-	// glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	// glEnableVertexAttribArray(2);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)0);
 	glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	// glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	shader_t vertexShader;
 
@@ -183,17 +152,6 @@ int main()
 	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
 
-	// vec3 cameraDir;
-	// glm_vec3_sub(cameraPos, cameraTarget, cameraDir);
-	// glm_vec3_normalize(cameraDir);
-
-	// vec3 cameraRight;
-	// glm_vec3_cross(up, cameraDir, cameraRight);
-	// glm_vec3_normalize(cameraRight);
-
-	// vec3 cameraUp;
-	// glm_vec3_cross(cameraDir, cameraRight, cameraUp);
-
 	while(!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
@@ -207,12 +165,6 @@ int main()
 
 		mat4 trans;
 		glm_mat4_identity(trans);
-		glm_rotate(trans, glm_rad(25.f), (vec3){1.0f, 0.0f, 0.0f});
-		//glm_rotate(trans, (float)glfwGetTime(), (vec3){0.0f, 1.0f, 0.0f});
-
-		// mat4 view;
-		// glm_mat4_identity(view);
-		// glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
 
 		vec3 cameraForward;
 		glm_vec3_add(cameraPos, cameraFront, cameraForward);
@@ -239,9 +191,7 @@ int main()
 		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 0 });
 		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 
-		//glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 
 		glfwSwapBuffers(window);
