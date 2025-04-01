@@ -110,4 +110,78 @@ void attach_shader(shader_t* shader, unsigned int program)
 	delete_shader(shader);
 }
 
+int load_obj(const char* path, float** vertices)
+{
+	FILE* file = fopen(path, "r");
+
+	if (!file)
+	{
+		*vertices = NULL;
+
+		return 0;
+	}
+
+	size_t vertexCount = 128;
+	float* buffer = malloc(vertexCount * 3 * sizeof(float));
+
+	if (!buffer)
+	{
+		fclose(file);
+
+		*vertices = NULL;
+
+		return 0;
+	}
+
+	char line[128]; // pls no big lines
+
+	int vertex = 0;
+
+	while (fgets(line, sizeof(line), file))
+	{
+		if (line[0] != 'v') continue;
+
+		float x, y, z;
+
+		if (sscanf(line + 2, "%f %f %f", &x, &y, &z) == 3)
+		{
+			if (vertex >= vertexCount)
+			{
+				vertexCount *= 2;
+
+				float* expanded = realloc(buffer, vertexCount * 3 * sizeof(float));
+
+				if (!expanded) // downloadmoreram.com
+				{
+					free(buffer);
+					fclose(file);
+
+					*vertices = NULL;
+
+					return vertex;
+				}
+
+				buffer = expanded;
+			}
+
+			buffer[vertex * 3] = x;
+			buffer[vertex * 3 + 1] = y;
+			buffer[vertex * 3 + 2] = z;
+
+			vertex++;
+		}
+	}
+
+	fclose(file);
+
+	float* trimmed = realloc(buffer, vertexCount * 3 * sizeof(float));
+
+	if (trimmed)
+		buffer = trimmed;
+
+	*vertices = buffer;
+
+	return vertex;
+}
+
 #endif
