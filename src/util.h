@@ -1,5 +1,5 @@
-#ifndef cthing_util
-#define cthing_util
+#ifndef ogt_util
+#define ogt_util
 
 #include <stdio.h>
 #include <stdlib.h>
