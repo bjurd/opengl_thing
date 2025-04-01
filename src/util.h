@@ -5,12 +5,17 @@
 #include <stdlib.h>
 #include <GLFW/glfw3.h>
 
-char* load_shader_code(const char* path)
+void read_file(const char* path, char** data, size_t* length)
 {
 	FILE* file = fopen(path, "rb");
 
 	if (!file)
-		return NULL;
+	{
+		*data = NULL;
+		*length = 0;
+
+		return;
+	}
 
 	fseek(file, 0, SEEK_END);
 	long size = ftell(file);
@@ -19,28 +24,51 @@ char* load_shader_code(const char* path)
 	if (size <= 0)
 	{
 		fclose(file);
-		return NULL;
+
+		*data = NULL;
+		*length = 0;
+
+		return;
 	}
 
-	char* code = (char*)malloc(size + 1);
+	char* buffer = (char*)malloc(size + 1);
 
-	if (!code)
+	if (!buffer)
 	{
 		fclose(file);
-		return NULL;
+
+		*data = NULL;
+		*length = 0;
+
+		return;
 	}
 
-	size_t bytes = fread(code, 1, size, file);
+	size_t bytes = fread(buffer, 1, size, file);
 
 	if (bytes != (size_t)size)
 	{
-		free(code);
+		free(buffer);
 		fclose(file);
-		return NULL;
+
+		*data = NULL;
+		*length = 0;
+
+		return;
 	}
 
-	code[bytes] = '\0';
+	buffer[bytes] = '\0';
 	fclose(file);
+
+	*data = buffer;
+	*length = size;
+}
+
+char* load_shader_code(const char* path)
+{
+	char* code;
+	size_t length;
+
+	read_file(path, &code, &length);
 
 	return code;
 }
