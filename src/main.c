@@ -116,7 +116,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	float* vertices;
-	int vertexCount = load_obj("../src/models/box.obj", &vertices);
+	int vertexCount = load_obj("../src/models/monkey.obj", &vertices);
 
 	printf("vertex: %d size: %d\n", vertexCount, vertexCount * 3 * sizeof(float));
 
@@ -232,6 +232,12 @@ int main()
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)trans);
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)view);
 		glUniformMatrix4fv(projectLoc, 1, GL_FALSE, (float*)projection);
+
+		unsigned int objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
+		unsigned int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
+
+		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 0 });
+		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 
 		//glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
