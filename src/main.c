@@ -116,7 +116,9 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	float* vertices;
-	int vertexCount = load_obj("../src/models/box.obj", &vertices);
+	int vertexCount = load_obj("../src/models/monkey.obj", &vertices);
+
+	printf("vertex: %d size: %d\n", vertexCount, vertexCount * 3 * sizeof(float));
 
 	unsigned int texture;
 	glGenTextures(1, &texture);
@@ -234,7 +236,7 @@ int main()
 		//glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
