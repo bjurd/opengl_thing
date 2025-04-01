@@ -116,7 +116,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	float* vertices;
-	int vertexCount = load_obj("../src/models/monkey.obj", &vertices);
+	int vertexCount = load_obj("../src/models/box.obj", &vertices);
 
 	printf("vertex: %d size: %d\n", vertexCount, vertexCount * 3 * sizeof(float));
 

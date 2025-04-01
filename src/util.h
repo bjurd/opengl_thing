@@ -132,6 +132,7 @@ static void process_face_line(const char* line, float* raw, int baseCount, float
 	int count = 0;
 
 	char lineCopy[256];
+
 	strncpy(lineCopy, line, sizeof(lineCopy));
 	lineCopy[sizeof(lineCopy)-1] = '\0';
 
@@ -171,6 +172,7 @@ static void process_face_line(const char* line, float* raw, int baseCount, float
 int load_obj(const char* path, float** vertices)
 {
 	FILE* file = fopen(path, "r");
+
 	if (!file)
 	{
 		*vertices = NULL;
@@ -212,7 +214,9 @@ int load_obj(const char* path, float** vertices)
 					{
 						free(rawVerts);
 						fclose(file);
+
 						*vertices = NULL;
+
 						return 0;
 					}
 
