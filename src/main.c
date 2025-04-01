@@ -187,9 +187,13 @@ int main()
 
 		unsigned int objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
 		unsigned int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
+		unsigned int lightPosLoc = glGetUniformLocation(shaderProgram, "lightPos");
+		unsigned int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
 
 		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 0 });
 		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
+		glUniform3fv(lightPosLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
+		glUniform3fv(viewPosLoc, 1, (float*)cameraPos);
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, vertexCount);
