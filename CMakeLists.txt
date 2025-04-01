@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(cthing VERSION 1.0.0)
+project(opengl_thing VERSION 1.0.0)
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -28,7 +28,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES
 
-	OUTPUT_NAME "cthing"
+	OUTPUT_NAME "opengl_thing"
 	PREFIX ""
 )
 
