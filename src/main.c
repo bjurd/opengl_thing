@@ -5,9 +5,6 @@
 #include <cglm/mat4.h>
 #include <cglm/types.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include "util.h"
 #include "ents.h"
 
@@ -128,10 +125,25 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glEnable(GL_DEPTH_TEST);
 
-	size_t vertexCount;
-	float* vertices = load_obj("../src/models/monkey.obj", &vertexCount);
+	size_t VertexCount;
+	size_t MeshCount;
+	size_t MaterialCount;
+	Material_t* Materials;
+	float* Vertices = load_obj("../src/models/hahamonkey.obj", &VertexCount, &MeshCount, &MaterialCount, &Materials);
 
-	printf("vertices: %d size: %d\n", vertexCount, vertexCount * OBJ_CHUNK_SIZE);
+	printf("Vertices: %d Size: %d Meshes: %d Materials: %d\n", VertexCount, VertexCount * OBJ_CHUNK_SIZE, MeshCount, MaterialCount);
+
+	for (size_t i = 0; i < MaterialCount; i++)
+	{
+		Material_t* Material = &Materials[i];
+
+		if (Material->TexturePath)
+		{
+			Material->TextureID = create_texture(Material->TexturePath);
+
+			printf("Created material %d for '%s'\n", Material->TextureID, Material->TexturePath);
+		}
+	}
 
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
@@ -140,7 +152,7 @@ int main()
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertexCount * OBJ_CHUNK_SIZE, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, VertexCount * OBJ_CHUNK_SIZE, Vertices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)0);
 	glEnableVertexAttribArray(0);
@@ -149,12 +161,12 @@ int main()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	shader_t vertexShader;
+	Shader_t vertexShader;
 
 	if (!load_shader(GL_VERTEX_SHADER, 1, "../src/shaders/tri.vert", &vertexShader))
 		delete_shader(&vertexShader);
 
-	shader_t fragmentShader;
+	Shader_t fragmentShader;
 
 	if (!load_shader(GL_FRAGMENT_SHADER, 1, "../src/shaders/tri.frag", &fragmentShader))
 		delete_shader(&fragmentShader);
@@ -216,15 +228,20 @@ int main()
 		unsigned int lightPosLoc = glGetUniformLocation(shaderProgram, "lightPos");
 		unsigned int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
 
-		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 0 });
+		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(lightPosLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(viewPosLoc, 1, (float*)cameraPos);
 
+		unsigned int texUniformLoc = glGetUniformLocation(shaderProgram, "ourTexture");
+		glUniform1i(texUniformLoc, 0);
+
 		ogt_render_entities(deltaTime);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, Materials[0].TextureID);
+		glDrawArrays(GL_TRIANGLES, 0, VertexCount);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
