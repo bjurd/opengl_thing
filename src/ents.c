@@ -94,8 +94,6 @@ Entity_t* ogt_create_entity(const char* Class)
 	Entity->ClassName = Class;
 	Entity->Index = EntityIndex;
 
-	Entity->Health = 0;
-
 	Entity->OnCreation = EntityClass->OnCreation;
 	Entity->OnDeletion = EntityClass->OnDeletion;
 	Entity->Think = EntityClass->Think;
