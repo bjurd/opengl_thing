@@ -9,7 +9,7 @@ set(CMAKE_C_FLAGS_RELEASE "-Os -s")
 
 file(GLOB_RECURSE SOURCES
 	"src/**.c"
-	"include/glad/src/**.c"
+	"include/**.c"
 )
 
 file(GLOB_RECURSE HEADERS
