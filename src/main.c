@@ -36,7 +36,12 @@ void OnSizeChange(GLFWwindow* Window, int Width, int Height)
 
 void ProcessInput(GLFWwindow* Window)
 {
-	float CameraSpeed = 2.5f * DeltaTime;
+	float CameraSpeed = 2.5f;
+
+	if (glfwGetKey(Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(Window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+		CameraSpeed = 8.f;
+
+	CameraSpeed *= DeltaTime;
 
 	vec3 MoveDelta;
 
