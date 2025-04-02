@@ -8,7 +8,7 @@
 #include "util.h"
 #include "ents.h"
 
-EntityManager_t EntityManager = { .EntIndex = 0 };
+EntityManager_t EntityManager = { 0 };
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -176,6 +176,10 @@ int main()
 	attach_shader(&vertexShader, shaderProgram);
 	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
+
+	ogt_init_entity_system(&EntityManager);
+
+	printf("Free ent indeces: %d\n", EntityManager.FreeIndexCount);
 
 	Entity_t Entity;
 	ogt_create_entity(&Entity);
