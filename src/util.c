@@ -11,98 +11,98 @@
 #define TINYOBJ_LOADER_C_IMPLEMENTATION
 #include <tinyobj_loader_c.h>
 
-void read_file(const char* path, char** data, size_t* length)
+void read_file(const char* Path, char** Data, size_t* Length)
 {
-	*data = NULL;
-	*length = 0;
+	*Data = NULL;
+	*Length = 0;
 
-	FILE* file = fopen(path, "rb");
+	FILE* File = fopen(Path, "rb");
 
-	if (!file)
+	if (!File)
 		return;
 
-	fseek(file, 0, SEEK_END);
-	long size = ftell(file);
-	rewind(file);
+	fseek(File, 0, SEEK_END);
+	long Size = ftell(File);
+	rewind(File);
 
-	if (size <= 0)
+	if (Size <= 0)
 	{
-		fclose(file);
+		fclose(File);
 
 		return;
 	}
 
-	char* buffer = (char*)malloc(size + 1);
+	char* Buffer = (char*)malloc(Size + 1);
 
-	if (!buffer)
+	if (!Buffer)
 	{
-		fclose(file);
+		fclose(File);
 
 		return;
 	}
 
-	size_t bytes = fread(buffer, 1, size, file);
+	size_t Bytes = fread(Buffer, 1, Size, File);
 
-	if (bytes != (size_t)size)
+	if (Bytes != (size_t)Size)
 	{
-		free(buffer);
-		fclose(file);
+		free(Buffer);
+		fclose(File);
 
 		return;
 	}
 
-	buffer[bytes] = '\0';
-	fclose(file);
+	Buffer[Bytes] = '\0';
+	fclose(File);
 
-	*data = buffer;
-	*length = size;
+	*Data = Buffer;
+	*Length = Size;
 }
 
-char* load_shader_code(const char* path)
+char* load_shader_code(const char* Path)
 {
-	char* code;
-	size_t length;
+	char* Code;
+	size_t Length;
 
-	read_file(path, &code, &length);
+	read_file(Path, &Code, &Length);
 
-	return code;
+	return Code;
 }
 
-bool load_shader(unsigned int type, unsigned int count, const char* path, Shader_t* shader)
+bool load_shader(unsigned int Type, unsigned int Count, const char* Path, Shader_t* Shader)
 {
-	shader->type = type;
-	shader->count = count;
-	shader->id = glCreateShader(type);
+	Shader->Type = Type;
+	Shader->Count = Count;
+	Shader->ID = glCreateShader(Type);
 
-	char* code = load_shader_code(path);
+	char* Code = load_shader_code(Path);
 
-	if (!code)
+	if (!Code)
 		return 0;
 
-	glShaderSource(shader->id, shader->count, (const char**)&code, NULL);
-	glCompileShader(shader->id);
+	glShaderSource(Shader->ID, Shader->Count, (const char**)&Code, NULL);
+	glCompileShader(Shader->ID);
 
-	free(code);
+	free(Code);
 
 	return 1;
 }
 
-void delete_shader(Shader_t* shader)
+void delete_shader(Shader_t* Shader)
 {
-	glDeleteShader(shader->id);
+	glDeleteShader(Shader->ID);
 }
 
-void attach_shader(Shader_t* shader, unsigned int program)
+void attach_shader(Shader_t* Shader, unsigned int ShaderProgram)
 {
-	glAttachShader(program, shader->id);
-	delete_shader(shader);
+	glAttachShader(ShaderProgram, Shader->ID);
+	delete_shader(Shader);
 }
 
-unsigned int create_texture(const char* path)
+unsigned int create_texture(const char* Path)
 {
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	unsigned int Texture;
+	glGenTextures(1, &Texture);
+	glBindTexture(GL_TEXTURE_2D, Texture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -111,150 +111,143 @@ unsigned int create_texture(const char* path)
 
 	stbi_set_flip_vertically_on_load(1);
 
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+	int Width, Height, Channels;
+	unsigned char* Data = stbi_load(Path, &Width, &Height, &Channels, 0);
 
-	if (data)
+	if (Data)
 	{
-		unsigned int format;
+		unsigned int Format;
 
-		switch (nrChannels)
+		switch (Channels)
 		{
 			case 1:
-				format = GL_RED;
+				Format = GL_RED;
 				break;
 
 			default:
 			case 3:
-				format = GL_RGB;
+				Format = GL_RGB;
 				break;
 
 			case 4:
-				format = GL_RGBA;
+				Format = GL_RGBA;
 				break;
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, Format, Width, Height, 0, Format, GL_UNSIGNED_BYTE, Data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
-		printf("Failed to load texture at '%s'\n", path);
+		printf("Failed to load texture at '%s'\n", Path);
 
-	stbi_image_free(data);
+	stbi_image_free(Data);
 
-	return texture;
+	return Texture;
 }
 
-static void get_file_data(void* ctx, const char* filename, const int is_mtl, const char* obj_filename, char** data, size_t* len)
+static void get_file_data(void* _, const char* Path, const int IsMaterial, const char* OBJPath, char** Data, size_t* Length)
 {
-	(void)ctx;
-
-	printf("Getting file '%s'\n", filename);
-
-	read_file(filename, data, len);
+	read_file(Path, Data, Length);
 }
 
-float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCount, Material_t** Materials)
+float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut)
 {
 	*VertexCount = 0;
 	*MeshCount = 0;
-	*MaterialCount = 0;
-	*Materials = NULL;
+	*MaterialCountOut = 0;
+	*MaterialsOut = NULL;
 
-	tinyobj_attrib_t attrib;
-	tinyobj_shape_t* shapes;
-	size_t num_shapes;
-	tinyobj_material_t* materials;
-	size_t num_materials;
+	tinyobj_attrib_t Attributes;
+	tinyobj_shape_t* Shapes;
+	size_t ShapeCount;
+	tinyobj_material_t* Materials;
+	size_t MaterialCount;
 
-	int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, Path, get_file_data, NULL, TINYOBJ_FLAG_TRIANGULATE);
-
-	if (ret != TINYOBJ_SUCCESS)
+	if (tinyobj_parse_obj(&Attributes, &Shapes, &ShapeCount, &Materials, &MaterialCount, Path, get_file_data, NULL, TINYOBJ_FLAG_TRIANGULATE) != TINYOBJ_SUCCESS)
 	{
 		printf("Failed to read file '%s'\n", Path);
 
 		return NULL;
 	}
 
-	size_t totalVertices = attrib.num_face_num_verts * 3;
+	size_t TotalVertices = Attributes.num_face_num_verts * 3;
+	float* Vertices = malloc(TotalVertices * OBJ_CHUNK_SIZE);
 
-	float* vertices = malloc(totalVertices * OBJ_CHUNK_SIZE);
-
-	if (!vertices)
+	if (!Vertices)
 	{
 		printf("Failed to allocate for file '%s'\n", Path);
 
-		tinyobj_attrib_free(&attrib);
-		tinyobj_shapes_free(shapes, num_shapes);
-		tinyobj_materials_free(materials, num_materials);
+		tinyobj_attrib_free(&Attributes);
+		tinyobj_shapes_free(Shapes, ShapeCount);
+		tinyobj_materials_free(Materials, MaterialCount);
 
 		return NULL;
 	}
 
-	size_t outOffset = 0;
+	size_t OutOffset = 0;
 
-	for (size_t face = 0; face < attrib.num_face_num_verts; face++)
+	for (size_t Face = 0; Face < Attributes.num_face_num_verts; Face++)
 	{
-		for (int vert = 0; vert < 3; ++vert)
+		for (int Vert = 0; Vert < 3; ++Vert)
 		{
-			tinyobj_vertex_index_t idx = attrib.faces[face * 3 + vert];
+			tinyobj_vertex_index_t Index = Attributes.faces[Face * 3 + Vert];
 
 			// pos
-			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 0];
-			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 1];
-			vertices[outOffset++] = attrib.vertices[3 * idx.v_idx + 2];
+			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 0];
+			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 1];
+			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 2];
 
 			// normal
-			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 0];
-			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 1];
-			vertices[outOffset++] = attrib.normals[3 * idx.vn_idx + 2];
+			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 0];
+			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 1];
+			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 2];
 
 			// tex
-			vertices[outOffset++] = attrib.texcoords[2 * idx.vt_idx + 0];
-			vertices[outOffset++] = attrib.texcoords[2 * idx.vt_idx + 1];
+			Vertices[OutOffset++] = Attributes.texcoords[2 * Index.vt_idx + 0];
+			Vertices[OutOffset++] = Attributes.texcoords[2 * Index.vt_idx + 1];
 		}
 	}
 
 	Material_t* OutMaterials = NULL;
 
-	if (num_materials > 0)
+	if (MaterialCount > 0)
 	{
-		OutMaterials = malloc(num_materials * sizeof(Material_t));
+		OutMaterials = malloc(MaterialCount * sizeof(Material_t));
 
 		if (OutMaterials == NULL)
 		{
 			printf("Failed to allocate materials for file '%s'\n", Path);
 
-			free(vertices);
+			free(Vertices);
 
-			tinyobj_attrib_free(&attrib);
-			tinyobj_shapes_free(shapes, num_shapes);
-			tinyobj_materials_free(materials, num_materials);
+			tinyobj_attrib_free(&Attributes);
+			tinyobj_shapes_free(Shapes, ShapeCount);
+			tinyobj_materials_free(Materials, MaterialCount);
 
 			return NULL;
 		}
 
-		for (size_t i = 0; i < num_materials; ++i)
+		for (size_t i = 0; i < MaterialCount; ++i)
 		{
-			if (materials[i].diffuse_texname)
-				OutMaterials[i].TexturePath = strdup(materials[i].diffuse_texname);
+			if (Materials[i].diffuse_texname)
+				OutMaterials[i].TexturePath = strdup(Materials[i].diffuse_texname);
 			else
 				OutMaterials[i].TexturePath = NULL;
 
-			OutMaterials[i].Color[0] = materials[i].diffuse[0];
-			OutMaterials[i].Color[1] = materials[i].diffuse[1];
-			OutMaterials[i].Color[2] = materials[i].diffuse[2];
+			OutMaterials[i].Color[0] = Materials[i].diffuse[0];
+			OutMaterials[i].Color[1] = Materials[i].diffuse[1];
+			OutMaterials[i].Color[2] = Materials[i].diffuse[2];
 		}
 	}
 
-	tinyobj_attrib_free(&attrib);
-	tinyobj_shapes_free(shapes, num_shapes);
-	tinyobj_materials_free(materials, num_materials);
+	tinyobj_attrib_free(&Attributes);
+	tinyobj_shapes_free(Shapes, ShapeCount);
+	tinyobj_materials_free(Materials, MaterialCount);
 
-	*VertexCount = totalVertices;
+	*VertexCount = TotalVertices;
 	*MeshCount = 1;
-	*MaterialCount = num_materials;
-	*Materials = OutMaterials;
+	*MaterialCountOut = MaterialCount;
+	*MaterialsOut = OutMaterials;
 
-	return vertices;
+	return Vertices;
 }

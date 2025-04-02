@@ -6,13 +6,13 @@
 
 #define OBJ_CHUNK_SIZE (8 * sizeof(float)) // 3 pos, 3 normal, 2 tex = 8
 
-void read_file(const char* path, char** data, size_t* length);
+void read_file(const char* Path, char** Data, size_t* Length);
 
 typedef struct
 {
-	unsigned int id;
-	unsigned int count;
-	unsigned int type;
+	unsigned int ID;
+	unsigned int Count;
+	unsigned int Type;
 } Shader_t;
 
 typedef struct
@@ -29,13 +29,13 @@ typedef struct
 	int MaterialIndex;
 } Mesh_t;
 
-char* load_shader_code(const char* path);
-bool load_shader(unsigned int type, unsigned int count, const char* path, Shader_t* shader);
-void delete_shader(Shader_t* shader);
-void attach_shader(Shader_t* shader, unsigned int program);
+char* load_shader_code(const char* Path);
+bool load_shader(unsigned int Type, unsigned int Count, const char* Path, Shader_t* Shader);
+void delete_shader(Shader_t* Shader);
+void attach_shader(Shader_t* Shader, unsigned int ShaderProgram);
 
-unsigned int create_texture(const char* path);
-static void get_file_data(void* ctx, const char* filename, const int is_mtl, const char* obj_filename, char** data, size_t* len);
-float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCount, Material_t** Materials);
+unsigned int create_texture(const char* Path);
+static void get_file_data(void* _, const char* Path, const int IsMaterial, const char* OBJPath, char** Data, size_t* Length);
+float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut)
 
 #endif
