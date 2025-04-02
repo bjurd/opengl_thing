@@ -13,15 +13,13 @@
 
 void read_file(const char* path, char** data, size_t* length)
 {
+	*data = NULL;
+	*length = 0;
+
 	FILE* file = fopen(path, "rb");
 
 	if (!file)
-	{
-		*data = NULL;
-		*length = 0;
-
 		return;
-	}
 
 	fseek(file, 0, SEEK_END);
 	long size = ftell(file);
@@ -30,9 +28,6 @@ void read_file(const char* path, char** data, size_t* length)
 	if (size <= 0)
 	{
 		fclose(file);
-
-		*data = NULL;
-		*length = 0;
 
 		return;
 	}
@@ -43,9 +38,6 @@ void read_file(const char* path, char** data, size_t* length)
 	{
 		fclose(file);
 
-		*data = NULL;
-		*length = 0;
-
 		return;
 	}
 
@@ -55,9 +47,6 @@ void read_file(const char* path, char** data, size_t* length)
 	{
 		free(buffer);
 		fclose(file);
-
-		*data = NULL;
-		*length = 0;
 
 		return;
 	}
@@ -167,6 +156,11 @@ static void get_file_data(void* ctx, const char* filename, const int is_mtl, con
 
 float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCount, Material_t** Materials)
 {
+	*VertexCount = 0;
+	*MeshCount = 0;
+	*MaterialCount = 0;
+	*Materials = NULL;
+
 	tinyobj_attrib_t attrib;
 	tinyobj_shape_t* shapes;
 	size_t num_shapes;
@@ -179,18 +173,8 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 	{
 		printf("Failed to read file '%s'\n", Path);
 
-		*VertexCount = 0;
-
 		return NULL;
 	}
-
-	printf("vertices: %zu\n", attrib.num_vertices);
-	printf("normals: %zu\n", attrib.num_normals);
-	printf("texcoords: %zu\n", attrib.num_texcoords);
-	printf("faces: %zu\n", attrib.num_faces);
-	printf("face vert counts: %zu\n", attrib.num_face_num_verts);
-	printf("shapes: %zu\n", num_shapes);
-	printf("materials: %zu\n", num_materials);
 
 	size_t totalVertices = attrib.num_face_num_verts * 3;
 
@@ -203,8 +187,6 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 		tinyobj_attrib_free(&attrib);
 		tinyobj_shapes_free(shapes, num_shapes);
 		tinyobj_materials_free(materials, num_materials);
-
-		*VertexCount = 0;
 
 		return NULL;
 	}
@@ -248,8 +230,6 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 			tinyobj_attrib_free(&attrib);
 			tinyobj_shapes_free(shapes, num_shapes);
 			tinyobj_materials_free(materials, num_materials);
-
-			*VertexCount = 0;
 
 			return NULL;
 		}
