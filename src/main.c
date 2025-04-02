@@ -14,6 +14,8 @@ EntityManager_t EntityManager = { 0 };
 
 unsigned int ShaderProgram;
 
+int WindowWidth = 800, WindowHeight = 600;
+
 float DeltaTime = 0.0f;
 float LastFrame = 0.0f;
 
@@ -26,6 +28,9 @@ vec3 CameraUp = { 0, 1.f, 0 };
 
 void OnSizeChange(GLFWwindow* Window, int Width, int Height)
 {
+	WindowWidth = Width;
+	WindowHeight = Height;
+
 	glViewport(0, 0, Width, Height);
 }
 
@@ -127,7 +132,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* Window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* Window = glfwCreateWindow(WindowWidth, WindowHeight, "OpenGL Thing", NULL, NULL);
 
 	if (Window == NULL)
 	{
@@ -208,7 +213,7 @@ int main()
 		glm_lookat(CameraPos, CameraForward, CameraUp, ViewMatrix);
 
 		mat4 ProjectionMatrix;
-		glm_perspective(glm_rad(45.f), 800.f / 600.f, .1f, 100.f, ProjectionMatrix);
+		glm_perspective(glm_rad(45.f), (float)WindowWidth / (float)WindowHeight, .1f, 100.f, ProjectionMatrix);
 
 		glUseProgram(ShaderProgram);
 
