@@ -12,83 +12,83 @@
 
 EntityManager_t EntityManager = { 0 };
 
-unsigned int shaderProgram;
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-float yaw = -90.0f;
-float pitch = 0.f;
-float lastX = 400, lastY = 300;
+unsigned int ShaderProgram;
 
-vec3 up = { 0, 1.f, 0 };
+float DeltaTime = 0.0f;
+float LastFrame = 0.0f;
 
-vec3 cameraPos = { 0, 0, 3.f };
-vec3 cameraFront = { 0, 0, -1.f };
-vec3 cameraUp = { 0, 1.f, 0 };
+float CameraYaw = -90.0f, CameraPitch = 0.f;
+float LastMouseX = 400, LastMouseY = 300;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+vec3 CameraPos = { 0, 0, 3.f };
+vec3 CameraFront = { 0, 0, -1.f };
+vec3 CameraUp = { 0, 1.f, 0 };
+
+void OnSizeChange(GLFWwindow* Window, int Width, int Height)
 {
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, Width, Height);
 }
 
-void processInput(GLFWwindow *window)
+void ProcessInput(GLFWwindow* Window)
 {
-	float cameraSpeed = 2.5f * deltaTime;
+	float CameraSpeed = 2.5f * DeltaTime;
 
-	vec3 moveDelta;
+	vec3 MoveDelta;
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		glm_vec3_scale(cameraFront, cameraSpeed, moveDelta);
-		glm_vec3_add(cameraPos, moveDelta, cameraPos);
+		glm_vec3_scale(CameraFront, CameraSpeed, MoveDelta);
+		glm_vec3_add(CameraPos, MoveDelta, CameraPos);
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		glm_vec3_scale(cameraFront, cameraSpeed, moveDelta);
-		glm_vec3_sub(cameraPos, moveDelta, cameraPos);
+		glm_vec3_scale(CameraFront, CameraSpeed, MoveDelta);
+		glm_vec3_sub(CameraPos, MoveDelta, CameraPos);
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		glm_vec3_cross(cameraFront, cameraUp, moveDelta);
-		glm_vec3_normalize(moveDelta);
-		glm_vec3_scale(moveDelta, cameraSpeed, moveDelta);
+		glm_vec3_cross(CameraFront, CameraUp, MoveDelta);
+		glm_vec3_normalize(MoveDelta);
+		glm_vec3_scale(MoveDelta, CameraSpeed, MoveDelta);
 
-		glm_vec3_sub(cameraPos, moveDelta, cameraPos);
+		glm_vec3_sub(CameraPos, MoveDelta, CameraPos);
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		glm_vec3_cross(cameraFront, cameraUp, moveDelta);
-		glm_vec3_normalize(moveDelta);
-		glm_vec3_scale(moveDelta, cameraSpeed, moveDelta);
+		glm_vec3_cross(CameraFront, CameraUp, MoveDelta);
+		glm_vec3_normalize(MoveDelta);
+		glm_vec3_scale(MoveDelta, CameraSpeed, MoveDelta);
 
-		glm_vec3_add(cameraPos, moveDelta, cameraPos);
+		glm_vec3_add(CameraPos, MoveDelta, CameraPos);
 	}
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void OnMouseMove(GLFWwindow* Window, double MouseX, double MouseY)
 {
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
+	float OffsetX = MouseX - LastMouseX;
+	float OffsetY = LastMouseY - MouseY;
+	LastMouseX = MouseX;
+	LastMouseY = MouseY;
 
-	const float sensitivity = 0.1f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
+	const float Sensitivity = 0.1f;
+	OffsetX *= Sensitivity;
+	OffsetY *= Sensitivity;
 
-	yaw += xoffset;
-	pitch += yoffset;
+	CameraYaw += OffsetX;
+	CameraPitch += OffsetY;
 
-	if (pitch > 89.0f) pitch = 89.0f;
-	if (pitch < -89.0f) pitch = -89.0f;
+	if (CameraPitch > 89.0f) CameraPitch = 89.0f;
+	if (CameraPitch < -89.0f) CameraPitch = -89.0f;
 
-	vec3 direction;
-	direction[0] = cos(glm_rad(yaw)) * cos(glm_rad(pitch));
-	direction[1] = sin(glm_rad(pitch));
-	direction[2] = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
-	glm_normalize_to(direction, cameraFront);
+	vec3 Direction;
+	Direction[0] = cos(glm_rad(CameraYaw)) * cos(glm_rad(CameraPitch));
+	Direction[1] = sin(glm_rad(CameraPitch));
+	Direction[2] = sin(glm_rad(CameraYaw)) * cos(glm_rad(CameraPitch));
+
+	glm_normalize_to(Direction, CameraFront);
 }
 
 void TestOnCreation(Entity_t* self)
@@ -108,7 +108,7 @@ void TestThink(Entity_t* self, float DeltaTime)
 
 void TestRender(Entity_t* self, float DeltaTime)
 {
-	unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+	unsigned int modelLoc = glGetUniformLocation(ShaderProgram, "model");
 
 	mat4 trans;
 	glm_mat4_identity(trans);
@@ -127,40 +127,56 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)
+	GLFWwindow* Window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+
+	if (Window == NULL)
 	{
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(window);
+
+	glfwMakeContextCurrent(Window);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		return -1;
 	}
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(Window, OnMouseMove);
 
 	glViewport(0, 0, 800, 600);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetFramebufferSizeCallback(Window, OnSizeChange);
 	glEnable(GL_DEPTH_TEST);
 
-	Shader_t vertexShader;
+	Shader_t VertexShader;
 
-	if (!load_shader(GL_VERTEX_SHADER, 1, "../src/shaders/tri.vert", &vertexShader))
-		delete_shader(&vertexShader);
+	if (!load_shader(GL_VERTEX_SHADER, 1, "../src/shaders/tri.vert", &VertexShader))
+	{
+		printf("Failed to load vertex shader!\n");
 
-	Shader_t fragmentShader;
+		delete_shader(&VertexShader);
+		glfwTerminate();
 
-	if (!load_shader(GL_FRAGMENT_SHADER, 1, "../src/shaders/tri.frag", &fragmentShader))
-		delete_shader(&fragmentShader);
+		return -1;
+	}
 
-	shaderProgram = glCreateProgram();
-	attach_shader(&vertexShader, shaderProgram);
-	attach_shader(&fragmentShader, shaderProgram);
-	glLinkProgram(shaderProgram);
+	Shader_t FragmentShader;
+
+	if (!load_shader(GL_FRAGMENT_SHADER, 1, "../src/shaders/tri.frag", &FragmentShader))
+	{
+		printf("Failed to load fragment shader!\n");
+
+		delete_shader(&FragmentShader);
+		glfwTerminate();
+
+		return -1;
+	}
+
+	ShaderProgram = glCreateProgram();
+	attach_shader(&VertexShader, ShaderProgram);
+	attach_shader(&FragmentShader, ShaderProgram);
+	glLinkProgram(ShaderProgram);
 
 	ogt_init_entity_system(&EntityManager);
 
@@ -172,60 +188,52 @@ int main()
 
 	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
 
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(Window))
 	{
-		float currentFrame = glfwGetTime();
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		float Time = glfwGetTime();
+		DeltaTime = Time - LastFrame;
+		LastFrame = Time;
 
-		processInput(window);
+		ProcessInput(Window);
 
-		ogt_think_entities(deltaTime);
+		ogt_think_entities(DeltaTime);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		mat4 trans;
-		glm_mat4_identity(trans);
+		vec3 CameraForward;
+		glm_vec3_add(CameraPos, CameraFront, CameraForward);
 
-		vec3 cameraForward;
-		glm_vec3_add(cameraPos, cameraFront, cameraForward);
+		mat4 ViewMatrix;
+		glm_lookat(CameraPos, CameraForward, CameraUp, ViewMatrix);
 
-		mat4 view;
-		glm_lookat(cameraPos, cameraForward, cameraUp, view);
+		mat4 ProjectionMatrix;
+		glm_perspective(glm_rad(45.f), 800.f / 600.f, .1f, 100.f, ProjectionMatrix);
 
-		mat4 projection;
-		glm_perspective(glm_rad(45.f), 800.f / 600.f, .1f, 100.f, projection);
+		glUseProgram(ShaderProgram);
 
-		glUseProgram(shaderProgram);
+		unsigned int viewLoc  = glGetUniformLocation(ShaderProgram, "view");
+		unsigned int projectLoc  = glGetUniformLocation(ShaderProgram, "projection");
 
-		unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
-		unsigned int projectLoc  = glGetUniformLocation(shaderProgram, "projection");
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)ViewMatrix);
+		glUniformMatrix4fv(projectLoc, 1, GL_FALSE, (float*)ProjectionMatrix);
 
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)view);
-		glUniformMatrix4fv(projectLoc, 1, GL_FALSE, (float*)projection);
-
-		unsigned int objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
-		unsigned int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
-		unsigned int lightPosLoc = glGetUniformLocation(shaderProgram, "lightPos");
-		unsigned int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
+		unsigned int objectColorLoc = glGetUniformLocation(ShaderProgram, "objectColor");
+		unsigned int lightColorLoc = glGetUniformLocation(ShaderProgram, "lightColor");
+		unsigned int lightPosLoc = glGetUniformLocation(ShaderProgram, "lightPos");
+		unsigned int viewPosLoc = glGetUniformLocation(ShaderProgram, "viewPos");
 
 		glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(lightPosLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
-		glUniform3fv(viewPosLoc, 1, (float*)cameraPos);
+		glUniform3fv(viewPosLoc, 1, (float*)CameraPos);
 
-		unsigned int texUniformLoc = glGetUniformLocation(shaderProgram, "ourTexture");
+		unsigned int texUniformLoc = glGetUniformLocation(ShaderProgram, "ourTexture");
 		glUniform1i(texUniformLoc, 0);
 
-		ogt_render_entities(deltaTime);
+		ogt_render_entities(DeltaTime);
 
-		// glBindVertexArray(VAO);
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, Materials[0].TextureID);
-		// glDrawArrays(GL_TRIANGLES, 0, VertexCount);
-
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(Window);
 		glfwPollEvents();
 	}
 
