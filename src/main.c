@@ -9,6 +9,9 @@
 #include <stb_image.h>
 
 #include "util.h"
+#include "ents.h"
+
+EntityManager_t EntityManager = { .EntIndex = 0 };
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -88,6 +91,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	glm_normalize_to(direction, cameraFront);
 }
 
+void TestThink(Entity_t* self, float DeltaTime)
+{
+	//printf("Thinking %d: %f\n", self->ID, DeltaTime);
+}
+
+void TestRender(Entity_t* self, float DeltaTime)
+{
+	//printf("Rendering %d: %f\n", self->ID, DeltaTime);
+}
+
 int main()
 {
 	glfwInit();
@@ -152,13 +165,26 @@ int main()
 	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
 
-	while(!glfwWindowShouldClose(window))
+	Entity_t Entity;
+	ogt_create_entity(&Entity);
+
+	if (Entity.Valid)
+	{
+		Entity.Think = TestThink;
+		Entity.Render = TestRender;
+
+		printf("Setup Entity\n");
+	}
+
+	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
 		processInput(window);
+
+		ogt_think_entities(deltaTime);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -194,6 +220,8 @@ int main()
 		glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(lightPosLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 		glUniform3fv(viewPosLoc, 1, (float*)cameraPos);
+
+		ogt_render_entities(deltaTime);
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, vertexCount);
