@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 #include <cglm/mat4.h>
 #include <cglm/types.h>
+#include <hashmap/map.h>
 
 #include "util.h"
 #include "ents.h"
@@ -86,6 +88,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	direction[1] = sin(glm_rad(pitch));
 	direction[2] = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
 	glm_normalize_to(direction, cameraFront);
+}
+
+void TestOnCreation(Entity_t* self)
+{
+	printf("Created %d\n", self->Index);
+}
+
+void TestOnDeletion(Entity_t* self)
+{
+	printf("Deleted %d\n", self->Index);
 }
 
 void TestThink(Entity_t* self, float DeltaTime)
@@ -178,19 +190,24 @@ int main()
 	glLinkProgram(shaderProgram);
 
 	ogt_init_entity_system(&EntityManager);
+	ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
+
+	uintptr_t Existing;
+	bool Exists = hashmap_get(EntityManager.EntityClassMap, "monkey", strlen("monkey"), &Existing);
+
+	printf("Class exists: %d %d\n", Exists, Existing);
+
+	if (Exists)
+	{
+		EntityClass_t* ExistingClass = (EntityClass_t*)Existing;
+		printf("Existing name: %s\n", ExistingClass->Name);
+	}
 
 	printf("Free ent indeces: %d\n", EntityManager.FreeIndexCount);
 
-	Entity_t Entity;
-	ogt_create_entity(&Entity);
-
-	if (Entity.Valid)
-	{
-		Entity.Think = TestThink;
-		Entity.Render = TestRender;
-
-		printf("Setup Entity\n");
-	}
+	Entity_t* MokeA = ogt_create_entity("monkey");
+	Entity_t* MokeB = ogt_create_entity("monkey");
+	Entity_t* MokeC = ogt_create_entity("monkey");
 
 	while (!glfwWindowShouldClose(window))
 	{
