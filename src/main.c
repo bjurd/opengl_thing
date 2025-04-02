@@ -12,6 +12,7 @@
 
 EntityManager_t EntityManager = { 0 };
 
+unsigned int shaderProgram;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float yaw = -90.0f;
@@ -102,12 +103,21 @@ void TestOnDeletion(Entity_t* self)
 
 void TestThink(Entity_t* self, float DeltaTime)
 {
-	//printf("Thinking %d: %f\n", self->ID, DeltaTime);
+	//printf("Thinking %d: %f\n", self->Index, DeltaTime);
 }
 
 void TestRender(Entity_t* self, float DeltaTime)
 {
-	//printf("Rendering %d: %f\n", self->ID, DeltaTime);
+	unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+
+	mat4 trans;
+	glm_mat4_identity(trans);
+	glm_translate(trans, self->Origin);
+
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)trans);
+
+	//printf("Rendering %d: %f\n", self->Index, DeltaTime);
+	ogt_render_entity_basic(self, DeltaTime);
 }
 
 int main()
@@ -137,42 +147,6 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glEnable(GL_DEPTH_TEST);
 
-	size_t VertexCount;
-	size_t MeshCount;
-	size_t MaterialCount;
-	Material_t* Materials;
-	float* Vertices = load_obj("../src/models/hahamonkey.obj", &VertexCount, &MeshCount, &MaterialCount, &Materials);
-
-	printf("Vertices: %d Size: %d Meshes: %d Materials: %d\n", VertexCount, VertexCount * OBJ_CHUNK_SIZE, MeshCount, MaterialCount);
-
-	for (size_t i = 0; i < MaterialCount; i++)
-	{
-		Material_t* Material = &Materials[i];
-
-		if (Material->TexturePath)
-		{
-			Material->TextureID = create_texture(Material->TexturePath);
-
-			printf("Created material %d for '%s'\n", Material->TextureID, Material->TexturePath);
-		}
-	}
-
-	unsigned int VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, VertexCount * OBJ_CHUNK_SIZE, Vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
 	Shader_t vertexShader;
 
 	if (!load_shader(GL_VERTEX_SHADER, 1, "../src/shaders/tri.vert", &vertexShader))
@@ -183,31 +157,20 @@ int main()
 	if (!load_shader(GL_FRAGMENT_SHADER, 1, "../src/shaders/tri.frag", &fragmentShader))
 		delete_shader(&fragmentShader);
 
-	unsigned int shaderProgram;
 	shaderProgram = glCreateProgram();
 	attach_shader(&vertexShader, shaderProgram);
 	attach_shader(&fragmentShader, shaderProgram);
 	glLinkProgram(shaderProgram);
 
 	ogt_init_entity_system(&EntityManager);
-	ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
 
-	uintptr_t Existing;
-	bool Exists = hashmap_get(EntityManager.EntityClassMap, "monkey", strlen("monkey"), &Existing);
+	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
+	ogt_setup_entity_class_model(Monkey, "../src/models/hahamonkey.obj");
 
-	printf("Class exists: %d %d\n", Exists, Existing);
+	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
+	MokeA->Origin[2] = -30;
 
-	if (Exists)
-	{
-		EntityClass_t* ExistingClass = (EntityClass_t*)Existing;
-		printf("Existing name: %s\n", ExistingClass->Name);
-	}
-
-	printf("Free ent indeces: %d\n", EntityManager.FreeIndexCount);
-
-	Entity_t* MokeA = ogt_create_entity("monkey");
-	Entity_t* MokeB = ogt_create_entity("monkey");
-	Entity_t* MokeC = ogt_create_entity("monkey");
+	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -236,11 +199,9 @@ int main()
 
 		glUseProgram(shaderProgram);
 
-		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
 		unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
 		unsigned int projectLoc  = glGetUniformLocation(shaderProgram, "projection");
 
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)trans);
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)view);
 		glUniformMatrix4fv(projectLoc, 1, GL_FALSE, (float*)projection);
 
@@ -259,18 +220,14 @@ int main()
 
 		ogt_render_entities(deltaTime);
 
-		glBindVertexArray(VAO);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Materials[0].TextureID);
-		glDrawArrays(GL_TRIANGLES, 0, VertexCount);
+		// glBindVertexArray(VAO);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, Materials[0].TextureID);
+		// glDrawArrays(GL_TRIANGLES, 0, VertexCount);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
 
 	glfwTerminate();
 
