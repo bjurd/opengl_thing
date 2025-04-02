@@ -7,10 +7,9 @@
 #include <cglm/types.h>
 #include <hashmap/map.h>
 
-#include "util.h"
+#include "globals.h"
 #include "ents.h"
-
-EntityManager_t EntityManager = { 0 };
+#include "util.h"
 
 unsigned int ShaderProgram;
 
@@ -188,7 +187,7 @@ int main()
 	attach_shader(&FragmentShader, ShaderProgram);
 	glLinkProgram(ShaderProgram);
 
-	ogt_init_entity_system(&EntityManager);
+	ogt_init_globals();
 
 	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
 

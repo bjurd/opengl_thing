@@ -65,9 +65,7 @@ typedef struct
 	unsigned int FreeIndexCount;
 } EntityManager_t;
 
-extern EntityManager_t EntityManager;
-
-void ogt_init_entity_system(EntityManager_t* Manager);
+void ogt_init_entity_system();
 EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreation, DeletionFn OnDeletion, ThinkFn Think, RenderFn Render);
 EntityClass_t* ogt_find_entity_class(const char* Class);
 Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass);

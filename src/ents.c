@@ -7,17 +7,25 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-void ogt_init_entity_system(EntityManager_t* Manager)
-{
-	*Manager = (EntityManager_t){ 0 };
+#include "globals.h"
 
-	Manager->EntIndex = 0;
-	Manager->FreeIndexCount = 0;
-	Manager->EntityClassMap = hashmap_create();
-	Manager->EntityModelMap = hashmap_create();
+void ogt_init_entity_system()
+{
+	GlobalVars->EntityManager = (EntityManager_t*)malloc(sizeof(EntityManager_t));
+
+	if (!GlobalVars->EntityManager)
+	{
+		printf("Failed to allocate for entity manager!\n");
+		return;
+	}
+
+	GlobalVars->EntityManager->EntIndex = 0;
+	GlobalVars->EntityManager->FreeIndexCount = 0;
+	GlobalVars->EntityManager->EntityClassMap = hashmap_create();
+	GlobalVars->EntityManager->EntityModelMap = hashmap_create();
 
 	for (unsigned int i = 0; i < MAX_ENTITIES; ++i)
-		Manager->FreeEntIndices[i] = i;
+		GlobalVars->EntityManager->FreeEntIndices[i] = i;
 }
 
 EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreation, DeletionFn OnDeletion, ThinkFn Think, RenderFn Render)
@@ -47,7 +55,7 @@ EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreatio
 	EntityClass->Think = *Think;
 	EntityClass->Render = *Render;
 
-	hashmap_set(EntityManager.EntityClassMap, Class, strlen(Class), (uintptr_t)EntityClass);
+	hashmap_set(GlobalVars->EntityManager->EntityClassMap, Class, strlen(Class), (uintptr_t)EntityClass);
 
 	return EntityClass;
 }
@@ -56,7 +64,7 @@ EntityClass_t* ogt_find_entity_class(const char* Class)
 {
 	uintptr_t Existing;
 
-	if (hashmap_get(EntityManager.EntityClassMap, Class, strlen(Class), &Existing))
+	if (hashmap_get(GlobalVars->EntityManager->EntityClassMap, Class, strlen(Class), &Existing))
 		return (EntityClass_t*)Existing;
 
 	return NULL;
@@ -66,17 +74,17 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 {
 	unsigned int EntityIndex;
 
-	if (EntityManager.FreeIndexCount > 0)
-		EntityIndex = EntityManager.FreeEntIndices[--EntityManager.FreeIndexCount];
+	if (GlobalVars->EntityManager->FreeIndexCount > 0)
+		EntityIndex = GlobalVars->EntityManager->FreeEntIndices[--GlobalVars->EntityManager->FreeIndexCount];
 	else
 	{
-		if (EntityManager.EntIndex >= MAX_ENTITIES)
+		if (GlobalVars->EntityManager->EntIndex >= MAX_ENTITIES)
 		{
-			printf("Too many entities! %d\n", EntityManager.EntIndex);
+			printf("Too many entities! %d\n", GlobalVars->EntityManager->EntIndex);
 			return NULL;
 		}
 
-		EntityIndex = EntityManager.EntIndex++;
+		EntityIndex = GlobalVars->EntityManager->EntIndex++;
 	}
 
 	Entity_t* Entity = (Entity_t*)malloc(sizeof(Entity_t));
@@ -102,7 +110,7 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	Entity->Think = EntityClass->Think;
 	Entity->Render = EntityClass->Render;
 
-	EntityManager.Entities[EntityIndex] = Entity;
+	GlobalVars->EntityManager->Entities[EntityIndex] = Entity;
 
 	if (Entity->OnCreation)
 		Entity->OnCreation(Entity);
@@ -137,16 +145,16 @@ void ogt_delete_entity(Entity_t* Entity)
 		Entity->Index = 0;
 		Entity->ClassInfo = NULL;
 
-		EntityManager.Entities[EntityIndex] = NULL;
-		EntityManager.FreeEntIndices[EntityManager.FreeIndexCount++] = EntityIndex;
+		GlobalVars->EntityManager->Entities[EntityIndex] = NULL;
+		GlobalVars->EntityManager->FreeEntIndices[GlobalVars->EntityManager->FreeIndexCount++] = EntityIndex;
 	}
 }
 
 void ogt_think_entities(float DeltaTime)
 {
-	for (unsigned int i = 0; i < EntityManager.EntIndex; ++i)
+	for (unsigned int i = 0; i < GlobalVars->EntityManager->EntIndex; ++i)
 	{
-		Entity_t* Entity = EntityManager.Entities[i];
+		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
 
 		if (Entity->Valid && Entity->Think)
 			Entity->Think(Entity, DeltaTime);
@@ -155,9 +163,9 @@ void ogt_think_entities(float DeltaTime)
 
 void ogt_render_entities(float DeltaTime, unsigned int ShaderProgram)
 {
-	for (unsigned int i = 0; i < EntityManager.EntIndex; ++i)
+	for (unsigned int i = 0; i < GlobalVars->EntityManager->EntIndex; ++i)
 	{
-		Entity_t* Entity = EntityManager.Entities[i];
+		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
 
 		if (Entity->Valid && Entity->Render)
 			Entity->Render(Entity, DeltaTime, ShaderProgram);
@@ -216,7 +224,7 @@ EntityModelInfo_t* ogt_get_model_info(const char* Path)
 {
 	uintptr_t Existing;
 
-	if (hashmap_get(EntityManager.EntityModelMap, Path, strlen(Path), &Existing))
+	if (hashmap_get(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), &Existing))
 		return (EntityModelInfo_t*)Existing;
 
 	EntityModelInfo_t* ModelInfo = (EntityModelInfo_t*)malloc(sizeof(EntityModelInfo_t));
@@ -263,7 +271,7 @@ EntityModelInfo_t* ogt_get_model_info(const char* Path)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	hashmap_set(EntityManager.EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
+	hashmap_set(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
 
 	printf(
 		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d\n",
