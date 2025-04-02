@@ -36,6 +36,6 @@ void attach_shader(Shader_t* Shader, unsigned int ShaderProgram);
 
 unsigned int create_texture(const char* Path);
 static void get_file_data(void* _, const char* Path, const int IsMaterial, const char* OBJPath, char** Data, size_t* Length);
-float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut)
+float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut);
 
 #endif
