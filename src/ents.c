@@ -14,6 +14,7 @@ void ogt_init_entity_system(EntityManager_t* Manager)
 	Manager->EntIndex = 0;
 	Manager->FreeIndexCount = 0;
 	Manager->EntityClassMap = hashmap_create();
+	Manager->EntityModelMap = hashmap_create();
 
 	for (unsigned int i = 0; i < MAX_ENTITIES; ++i)
 		Manager->FreeEntIndices[i] = i;
@@ -40,8 +41,6 @@ EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreatio
 	}
 
 	EntityClass->Name = Class;
-
-	EntityClass->ModelInfo = NULL;
 
 	EntityClass->OnCreation = *OnCreation;
 	EntityClass->OnDeletion = *OnDeletion;
@@ -93,6 +92,7 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	Entity->Index = EntityIndex;
 
 	Entity->ClassInfo = EntityClass;
+	Entity->ModelInfo = NULL;
 
 	memset(&Entity->Origin, 0, sizeof(vec3));
 	memset(&Entity->Angles, 0, sizeof(vec3));
@@ -153,67 +153,92 @@ void ogt_think_entities(float DeltaTime)
 	}
 }
 
-void ogt_render_entities(float DeltaTime)
+void ogt_render_entities(float DeltaTime, unsigned int ShaderProgram)
 {
 	for (unsigned int i = 0; i < EntityManager.EntIndex; ++i)
 	{
 		Entity_t* Entity = EntityManager.Entities[i];
 
 		if (Entity->Valid && Entity->Render)
-			Entity->Render(Entity, DeltaTime);
+			Entity->Render(Entity, DeltaTime, ShaderProgram);
 	}
 }
 
-void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
+void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime, unsigned int ShaderProgram)
 {
-	if (!Entity->Valid || !Entity->ClassInfo)
+	if (!Entity->Valid)
 	{
 		printf("Tried to render invalid entity!\n");
 		return;
 	}
 
-	EntityModelInfo_t* ModelInfo = Entity->ClassInfo->ModelInfo;
+	EntityModelInfo_t* ModelInfo = Entity->ModelInfo;
 
 	if (!ModelInfo)
 	{
-		printf("Tried to render an entity with no model info! '%s' - %d\n", Entity->ClassInfo->Name, Entity->Index);
+		printf("Tried to render an entity with no model info! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
 		return;
 	}
 
 	if (!ModelInfo->VAO)
 	{
-		printf("Tried to render entity with invalid VAO! '%s' - %d\n", Entity->ClassInfo->Name, Entity->Index);
+		printf("Tried to render entity with invalid VAO! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
 		return;
 	}
 
 	if (!ModelInfo->VBO)
 	{
-		printf("Tried to render entity with invalid VBO! '%s' - %d\n", Entity->ClassInfo->Name, Entity->Index);
+		printf("Tried to render entity with invalid VBO! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
 		return;
 	}
 
+	unsigned int useTextureLoc = glGetUniformLocation(ShaderProgram, "useTexture");
+
 	glBindVertexArray(ModelInfo->VAO);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);
+
+	if (useTextureLoc)
+	{
+		if (ModelInfo->MaterialCount > 0)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);
+
+			glUniform1i(useTextureLoc, 1);
+		}
+		else
+			glUniform1i(useTextureLoc, 0);
+	}
+
 	glDrawArrays(GL_TRIANGLES, 0, ModelInfo->VertexCount);
 }
 
-void ogt_load_entity_class_model(EntityClass_t* EntityClass)
+EntityModelInfo_t* ogt_get_model_info(const char* Path)
 {
-	EntityModelInfo_t* ModelInfo = EntityClass->ModelInfo;
+	uintptr_t Existing;
 
-	if (!ModelInfo->ModelPath)
+	if (hashmap_get(EntityManager.EntityModelMap, Path, strlen(Path), &Existing))
+		return (EntityModelInfo_t*)Existing;
+
+	EntityModelInfo_t* ModelInfo = (EntityModelInfo_t*)malloc(sizeof(EntityModelInfo_t));
+
+	if (!ModelInfo)
 	{
-		printf("Trying to laod model for class with no model '%s'\n", EntityClass->Name);
-		return;
+		printf("Failed to allocate model info for '%s'\n", Path);
+
+		return NULL;
 	}
+
+	ModelInfo->ModelPath = Path;
+	ModelInfo->VAO = 0;
+	ModelInfo->VBO = 0;
 
 	ModelInfo->Vertices = load_obj(ModelInfo->ModelPath, &ModelInfo->VertexCount, &ModelInfo->MeshCount, &ModelInfo->MaterialCount, &ModelInfo->Materials);
 
 	if (!ModelInfo->Vertices)
 	{
-		printf("Failed to load model for class '%s'\n", EntityClass->Name);
-		return;
+		printf("Failed to load model for '%s'\n", Path);
+
+		return NULL;
 	}
 
 	for (size_t i = 0; i < ModelInfo->MaterialCount; ++i)
@@ -223,44 +248,6 @@ void ogt_load_entity_class_model(EntityClass_t* EntityClass)
 		if (Material->TexturePath)
 			Material->TextureID = create_texture(Material->TexturePath);
 	}
-
-	printf(
-		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d\n",
-
-		EntityClass->Name,
-		ModelInfo->VertexCount,
-		ModelInfo->VertexCount * OBJ_CHUNK_SIZE,
-		ModelInfo->MeshCount,
-		ModelInfo->MaterialCount
-	);
-}
-
-void ogt_setup_entity_class_model(EntityClass_t* EntityClass, const char* ModelPath)
-{
-	EntityModelInfo_t* ModelInfo = EntityClass->ModelInfo;
-
-	if (ModelInfo) // Assume this was already done
-	{
-		printf("Tried to re-setup entity class model '%s'\n", EntityClass->Name);
-		return;
-	}
-	else
-	{
-		ModelInfo = (EntityModelInfo_t*)malloc(sizeof(EntityModelInfo_t));
-
-		if (!ModelInfo)
-		{
-			printf("Failed to allocate model info for class '%s'\n", EntityClass->Name);
-			return;
-		}
-
-		ModelInfo->ModelPath = ModelPath;
-		ModelInfo->VAO = 0;
-		ModelInfo->VBO = 0;
-		EntityClass->ModelInfo = ModelInfo;
-	}
-
-	ogt_load_entity_class_model(EntityClass);
 
 	glGenVertexArrays(1, &ModelInfo->VAO);
 	glGenBuffers(1, &ModelInfo->VBO);
@@ -276,5 +263,36 @@ void ogt_setup_entity_class_model(EntityClass_t* EntityClass, const char* ModelP
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	printf("VAO: %d VBO: %d\n", ModelInfo->VAO, ModelInfo->VBO);
+	hashmap_set(EntityManager.EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
+
+	printf(
+		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d\n",
+
+		Path,
+		ModelInfo->VertexCount,
+		ModelInfo->VertexCount * OBJ_CHUNK_SIZE,
+		ModelInfo->MeshCount,
+		ModelInfo->MaterialCount
+	);
+
+	return ModelInfo;
+}
+
+void ogt_set_entity_model(Entity_t* Entity, const char* Path)
+{
+	if (!Entity->Valid)
+	{
+		printf("Tried to set model '%s' on invalid entity!\n", Path);
+		return;
+	}
+
+	EntityModelInfo_t* ModelInfo = ogt_get_model_info(Path);
+
+	if (!ModelInfo)
+	{
+		printf("Failed to set model '%s' for %d ('%s')\n", Path, Entity->Index, Entity->ClassInfo->Name);
+		return;
+	}
+
+	Entity->ModelInfo = ModelInfo;
 }

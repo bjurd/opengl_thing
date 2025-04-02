@@ -111,7 +111,7 @@ void TestThink(Entity_t* self, float DeltaTime)
 	//printf("Thinking %d: %f\n", self->Index, DeltaTime);
 }
 
-void TestRender(Entity_t* self, float DeltaTime)
+void TestRender(Entity_t* self, float DeltaTime, unsigned int ShaderProgram)
 {
 	unsigned int modelLoc = glGetUniformLocation(ShaderProgram, "model");
 
@@ -122,7 +122,7 @@ void TestRender(Entity_t* self, float DeltaTime)
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)trans);
 
 	//printf("Rendering %d: %f\n", self->Index, DeltaTime);
-	ogt_render_entity_basic(self, DeltaTime);
+	ogt_render_entity_basic(self, DeltaTime, ShaderProgram);
 }
 
 int main()
@@ -186,12 +186,14 @@ int main()
 	ogt_init_entity_system(&EntityManager);
 
 	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
-	ogt_setup_entity_class_model(Monkey, "../src/models/hahamonkey.obj");
 
 	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
 	MokeA->Origin[2] = -30;
 
 	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+
+	ogt_set_entity_model(MokeA, "../src/models/hahamonkey.obj");
+	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
 
 	while (!glfwWindowShouldClose(Window))
 	{
@@ -236,7 +238,7 @@ int main()
 		unsigned int texUniformLoc = glGetUniformLocation(ShaderProgram, "ourTexture");
 		glUniform1i(texUniformLoc, 0);
 
-		ogt_render_entities(DeltaTime);
+		ogt_render_entities(DeltaTime, ShaderProgram);
 
 		glfwSwapBuffers(Window);
 		glfwPollEvents();
