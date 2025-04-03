@@ -38,4 +38,8 @@ unsigned int create_texture(const char* Path);
 static void get_file_data(void* _, const char* Path, const int IsMaterial, const char* OBJPath, char** Data, size_t* Length);
 float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut);
 
+void vec3_to_angles(const vec3 Forward, float* Yaw, float* Pitch);
+void angles_to_vec3(float Yaw, float Pitch, vec3 Forward, vec3 Right, vec3 Up);
+void vec3_directionals(vec3 Forward, vec3 Right, vec3 Up);
+
 #endif

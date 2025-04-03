@@ -4,12 +4,15 @@
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <cglm/cglm.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #define TINYOBJ_LOADER_C_IMPLEMENTATION
 #include <tinyobj_loader_c.h>
+
+#include "globals.h"
 
 void read_file(const char* Path, char** Data, size_t* Length)
 {
@@ -250,4 +253,47 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 	*MaterialsOut = OutMaterials;
 
 	return Vertices;
+}
+
+// https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/mathlib/mathlib_base.cpp#L535
+void vec3_to_angles(const vec3 Forward, float* Yaw, float* Pitch)
+{
+	if (Forward[0] == 0.f && Forward[2] == 0.f)
+	{
+		*Yaw = 0.f;
+		*Pitch = (Forward[1] > 0.f) ? 90.f : -90.f;
+	}
+	else
+	{
+		*Yaw = glm_deg(atan2f(Forward[0], -Forward[2]));
+		if (*Yaw < 0.f) *Yaw += 360.f;
+
+		*Pitch = glm_deg(asinf(Forward[1]));
+	}
+}
+
+void angles_to_vec3(float Yaw, float Pitch, vec3 Forward, vec3 Right, vec3 Up)
+{
+	Yaw = glm_rad(Yaw);
+	Pitch = glm_rad(Pitch);
+
+	Forward[0] = sinf(Yaw) * cosf(Pitch);
+	Forward[1] = sinf(Pitch);
+	Forward[2] = -cosf(Yaw) * cosf(Pitch);
+
+	glm_vec3_cross(Forward, VEC3_UP, Right);
+	glm_vec3_normalize(Right);
+
+	glm_vec3_cross(Right, Forward, Up);
+
+	glm_vec3_normalize(Forward);
+	glm_vec3_normalize(Right);
+	glm_vec3_normalize(Up);
+}
+
+void vec3_directionals(vec3 Forward, vec3 Right, vec3 Up)
+{
+	float Yaw, Pitch;
+	vec3_to_angles(Forward, &Yaw, &Pitch);
+	angles_to_vec3(Yaw, Pitch, Forward, Right, Up);
 }
