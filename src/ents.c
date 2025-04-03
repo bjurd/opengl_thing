@@ -161,18 +161,18 @@ void ogt_think_entities(float DeltaTime)
 	}
 }
 
-void ogt_render_entities(float DeltaTime, unsigned int ShaderProgram)
+void ogt_render_entities(float DeltaTime)
 {
 	for (unsigned int i = 0; i < GlobalVars->EntityManager->EntIndex; ++i)
 	{
 		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
 
 		if (Entity->Valid && Entity->Render)
-			Entity->Render(Entity, DeltaTime, ShaderProgram);
+			Entity->Render(Entity, DeltaTime);
 	}
 }
 
-void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime, unsigned int ShaderProgram)
+void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 {
 	if (!Entity->Valid)
 	{
@@ -200,23 +200,28 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime, unsigned int Sha
 		return;
 	}
 
-	unsigned int useTextureLoc = glGetUniformLocation(ShaderProgram, "useTexture");
+	unsigned int ShaderProgram;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &ShaderProgram);
 
-	glBindVertexArray(ModelInfo->VAO);
-
-	if (useTextureLoc)
+	if (ShaderProgram)
 	{
-		if (ModelInfo->MaterialCount > 0)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);
+		unsigned int UseTextureLoc = glGetUniformLocation(ShaderProgram, "useTexture");
 
-			glUniform1i(useTextureLoc, 1);
+		if (UseTextureLoc)
+		{
+			if (ModelInfo->MaterialCount > 0)
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);
+
+				glUniform1i(UseTextureLoc, 1);
+			}
+			else
+				glUniform1i(UseTextureLoc, 0);
 		}
-		else
-			glUniform1i(useTextureLoc, 0);
 	}
 
+	glBindVertexArray(ModelInfo->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, ModelInfo->VertexCount);
 }
 

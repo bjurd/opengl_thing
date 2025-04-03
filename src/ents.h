@@ -12,7 +12,7 @@ typedef struct Entity_t Entity_t;
 typedef void (*CreationFn)(Entity_t* self);
 typedef void (*DeletionFn)(Entity_t* self);
 typedef void (*ThinkFn)(Entity_t* self, float DeltaTime);
-typedef void (*RenderFn)(Entity_t* self, float DeltaTime, unsigned int ShaderProgram);
+typedef void (*RenderFn)(Entity_t* self, float DeltaTime);
 
 typedef struct
 {
@@ -72,8 +72,8 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass);
 Entity_t* ogt_create_entity(const char* Class);
 void ogt_delete_entity(Entity_t* Entity);
 void ogt_think_entities(float DeltaTime);
-void ogt_render_entities(float DeltaTime, unsigned int ShaderProgram);
-void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime, unsigned int ShaderProgram); // Renders VAO
+void ogt_render_entities(float DeltaTime);
+void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime); // Renders VAO
 EntityModelInfo_t* ogt_get_model_info(const char* Path);
 void ogt_set_entity_model(Entity_t* Entity, const char* Path);
 
