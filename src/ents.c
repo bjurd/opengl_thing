@@ -6,6 +6,8 @@
 #include <hashmap/map.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <cglm/cglm.h>
+#include <cglm/types.h>
 
 #include "globals.h"
 
@@ -219,6 +221,20 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 			else
 				glUniform1i(UseTextureLoc, 0);
 		}
+	}
+
+	unsigned int ModelLoc = glGetUniformLocation(ShaderProgram, "model");
+
+	if (ModelLoc)
+	{
+		mat4 Transform;
+		glm_mat4_identity(Transform);
+		glm_translate(Transform, Entity->Origin);
+		glm_rotate(Transform, glm_rad(Entity->Angles[0]), VEC3_RIGHT);
+		glm_rotate(Transform, glm_rad(Entity->Angles[1]), VEC3_UP);
+		glm_rotate(Transform, glm_rad(Entity->Angles[2]), VEC3_FORWARD);
+
+		glUniformMatrix4fv(ModelLoc, 1, GL_FALSE, (float*)Transform);
 	}
 
 	glBindVertexArray(ModelInfo->VAO);

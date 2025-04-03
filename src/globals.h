@@ -3,6 +3,8 @@
 
 #include "ents.h"
 
+#define VEC3_FORWARD ((vec3){ 1.f, 0.f, 0.f })
+#define VEC3_RIGHT ((vec3){ 0.f, 0.f, -1.f })
 #define VEC3_UP ((vec3){ 0.f, 1.f, 0.f })
 
 typedef struct

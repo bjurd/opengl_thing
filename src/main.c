@@ -3,7 +3,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
-#include <cglm/mat4.h>
 #include <cglm/types.h>
 #include <hashmap/map.h>
 
@@ -119,17 +118,6 @@ void TestThink(Entity_t* self, float DeltaTime)
 
 void TestRender(Entity_t* self, float DeltaTime)
 {
-	unsigned int ShaderProgram;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &ShaderProgram);
-
-	unsigned int ModelLoc = glGetUniformLocation(ShaderProgram, "model");
-
-	mat4 Transform;
-	glm_mat4_identity(Transform);
-	glm_translate(Transform, self->Origin);
-
-	glUniformMatrix4fv(ModelLoc, 1, GL_FALSE, (float*)Transform);
-
 	//printf("Rendering %d: %f\n", self->Index, DeltaTime);
 	ogt_render_entity_basic(self, DeltaTime);
 }
@@ -199,12 +187,20 @@ int main()
 	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
 
 	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
-	MokeA->Origin[2] = -30;
+	MokeA->Origin[2] = -15;
 
 	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+	MokeB->Origin[0] = 5;
+	MokeB->Origin[2] = -15;
+
+	Entity_t* Gooba = ogt_create_entity_ex(Monkey);
+	Gooba->Origin[0] = -5;
+	Gooba->Origin[2] = -15;
+	Gooba->Angles[1] = 90.f;
 
 	ogt_set_entity_model(MokeA, "../src/models/hahamonkey.obj");
 	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
+	ogt_set_entity_model(Gooba, "../src/models/goobas/vertexcol_mix_sphere.obj");
 
 	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
