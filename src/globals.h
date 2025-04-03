@@ -3,8 +3,13 @@
 
 #include "ents.h"
 
+#define VEC3_UP ((vec3){ 0.f, 1.f, 0.f })
+
 typedef struct
 {
+	int WindowWidth;
+	int WindowHeight;
+
 	EntityManager_t* EntityManager;
 } GlobalVars_t;
 

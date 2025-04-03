@@ -14,6 +14,9 @@ void ogt_init_globals()
 		return;
 	}
 
+	GlobalVars->WindowWidth = 0;
+	GlobalVars->WindowHeight = 0;
+
 	GlobalVars->EntityManager = NULL;
 
 	ogt_init_entity_system();
