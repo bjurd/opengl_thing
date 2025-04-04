@@ -106,6 +106,7 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 
 	memset(&Entity->Origin, 0, sizeof(vec3));
 	memset(&Entity->Angles, 0, sizeof(vec3));
+	glm_vec3_one(Entity->Color);
 
 	Entity->OnCreation = EntityClass->OnCreation;
 	Entity->OnDeletion = EntityClass->OnDeletion;
@@ -207,7 +208,13 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 
 	if (ShaderProgram)
 	{
+		unsigned int ObjectColorLoc = glGetUniformLocation(ShaderProgram, "objectColor");
 		unsigned int UseTextureLoc = glGetUniformLocation(ShaderProgram, "useTexture");
+
+		if (ObjectColorLoc)
+		{
+			glUniform3fv(ObjectColorLoc, 1, (float*)Entity->Color);
+		}
 
 		if (UseTextureLoc)
 		{
@@ -287,10 +294,15 @@ EntityModelInfo_t* ogt_get_model_info(const char* Path)
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)0);
 	glEnableVertexAttribArray(0);
+
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(3);
 
 	hashmap_set(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
 

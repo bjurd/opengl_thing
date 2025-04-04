@@ -4,13 +4,14 @@ out vec4 FragColor;
 in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoord;
+in vec3 MaterialColor;
 
-uniform sampler2D ourTexture;
 uniform int useTexture;
+uniform sampler2D ourTexture;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
-uniform vec3 objectColor; // material color
+uniform vec3 objectColor;
 
 void main()
 {
@@ -33,14 +34,19 @@ void main()
 
 	vec3 lighting = ambient + diffuse + specular;
 
-	vec4 texColor = vec4(1.0);
+	vec3 baseColor = objectColor;
+
+	if (useTexture != 1)
+	{
+		baseColor *= MaterialColor;
+	}
 
 	if (useTexture == 1)
 	{
-		texColor = texture(ourTexture, TexCoord);
+		vec4 texColor = texture(ourTexture, TexCoord);
+		baseColor *= texColor.rgb;
 	}
 
-	vec3 finalColor = lighting * (texColor.rgb * objectColor);
-
-	FragColor = vec4(finalColor, texColor.a);
+	vec3 finalColor = lighting * baseColor;
+	FragColor = vec4(finalColor, 1.0);
 }

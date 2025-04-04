@@ -191,23 +191,37 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 
 	for (size_t Face = 0; Face < Attributes.num_face_num_verts; Face++)
 	{
+		int MaterialID = Attributes.material_ids[Face];
+		vec3 MaterialColor = { 1.f, 1.f, 1.f };
+
+		if (MaterialID >= 0 && MaterialID < (int)MaterialCount)
+			glm_vec3_copy(Materials[MaterialID].diffuse, MaterialColor);
+
 		for (int Vert = 0; Vert < 3; ++Vert)
 		{
-			tinyobj_vertex_index_t Index = Attributes.faces[Face * 3 + Vert];
+			tinyobj_vertex_index_t Index = Attributes.faces[(Face * 3) + Vert];
 
 			// pos
-			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 0];
-			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 1];
-			Vertices[OutOffset++] = Attributes.vertices[3 * Index.v_idx + 2];
+			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 0];
+			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 1];
+			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 2];
 
 			// normal
-			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 0];
-			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 1];
-			Vertices[OutOffset++] = Attributes.normals[3 * Index.vn_idx + 2];
+			float nx = Attributes.normals[(3 * Index.vn_idx) + 0];
+			float ny = Attributes.normals[(3 * Index.vn_idx) + 1];
+			float nz = Attributes.normals[(3 * Index.vn_idx) + 2];
+			Vertices[OutOffset++] = nx;
+			Vertices[OutOffset++] = ny;
+			Vertices[OutOffset++] = nz;
 
 			// tex
-			Vertices[OutOffset++] = Attributes.texcoords[2 * Index.vt_idx + 0];
-			Vertices[OutOffset++] = Attributes.texcoords[2 * Index.vt_idx + 1];
+			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 0];
+			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 1];
+
+			// material color
+			Vertices[OutOffset++] = MaterialColor[0];
+			Vertices[OutOffset++] = MaterialColor[1];
+			Vertices[OutOffset++] = MaterialColor[2];
 		}
 	}
 

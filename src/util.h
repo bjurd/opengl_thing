@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <cglm/types.h>
 
-#define OBJ_CHUNK_SIZE (8 * sizeof(float)) // 3 pos, 3 normal, 2 tex = 8
+#define OBJ_CHUNK_SIZE (11 * sizeof(float)) // 3 pos, 3 normal, 2 tex, 3 material color
 
 void read_file(const char* Path, char** Data, size_t* Length);
 

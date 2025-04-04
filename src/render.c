@@ -58,12 +58,10 @@ void ogt_render_view(RenderView_t* View, float DeltaTime)
 	glUniformMatrix4fv(ProjectionLoc, 1, GL_FALSE, (float*)ProjectionMatrix);
 
 	// TODO: Update this
-	unsigned int objectColorLoc = glGetUniformLocation(ShaderProgram, "objectColor");
 	unsigned int lightColorLoc = glGetUniformLocation(ShaderProgram, "lightColor");
 	unsigned int lightPosLoc = glGetUniformLocation(ShaderProgram, "lightPos");
 	unsigned int viewPosLoc = glGetUniformLocation(ShaderProgram, "viewPos");
 
-	glUniform3fv(objectColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 	glUniform3fv(lightColorLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 	glUniform3fv(lightPosLoc, 1, (float*)(vec3){ 1.f, 1.f, 1.f });
 	glUniform3fv(viewPosLoc, 1, (float*)View->Origin);

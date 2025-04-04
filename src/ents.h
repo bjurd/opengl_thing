@@ -47,6 +47,7 @@ struct Entity_t
 
 	vec3 Origin;
 	vec3 Angles;
+	vec3 Color;
 
 	CreationFn OnCreation;
 	DeletionFn OnDeletion;
