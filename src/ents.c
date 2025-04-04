@@ -191,51 +191,16 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 		return;
 	}
 
-	if (!ModelInfo->VAO)
+	if (!ModelInfo->VAO || !ModelInfo->VBO)
 	{
-		printf("Tried to render entity with invalid VAO! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
-		return;
-	}
-
-	if (!ModelInfo->VBO)
-	{
-		printf("Tried to render entity with invalid VBO! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
+		printf("Tried to render entity with invalid VAO/VBO! %d ('%s')\n", Entity->Index, Entity->ClassInfo->Name);
 		return;
 	}
 
 	unsigned int ShaderProgram;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &ShaderProgram);
+	glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&ShaderProgram);
 
-	if (ShaderProgram)
-	{
-		glUniform3fv(glGetUniformLocation(ShaderProgram, "objectColor"), 1, (float*)Entity->Color);
-
-		Material_t* Material = ModelInfo->MaterialCount > 0 ? &ModelInfo->Materials[0] : NULL;
-
-		if (Material && Material->TextureID)
-		{
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, Material->AmbientColor);
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, Material->DiffuseColor);
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, Material->SpecularColor);
-			glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), Material->SpecularExponent);
-			glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), Material->Dissolve);
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, Material->TextureID);
-
-			glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 1);
-		}
-		else
-		{
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, (float*)VEC3_ONE);
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, (float*)VEC3_ONE);
-			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, (float*)VEC3_ONE);
-			glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), 1);
-			glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), 1);
-
-			glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 0);
-		}
-	}
+	glUniform3fv(glGetUniformLocation(ShaderProgram, "objectColor"), 1, (float*)Entity->Color);
 
 	unsigned int ModelLoc = glGetUniformLocation(ShaderProgram, "model");
 
@@ -252,7 +217,51 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 	}
 
 	glBindVertexArray(ModelInfo->VAO);
-	glDrawArrays(GL_TRIANGLES, 0, ModelInfo->VertexCount);
+
+	if (ModelInfo->SubmeshCount > 0)
+	{
+		for (size_t i = 0; i < ModelInfo->SubmeshCount; ++i)
+		{
+			Mesh_t* Submesh = &ModelInfo->Submeshes[i];
+			Material_t* Material = Submesh->Material;
+
+			if (Material && Material->TextureID)
+			{
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, Material->AmbientColor);
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, Material->DiffuseColor);
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, Material->SpecularColor);
+				glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), Material->SpecularExponent);
+				glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), Material->Dissolve);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, Material->TextureID);
+				glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 1);
+			}
+			else
+			{
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, (float*)VEC3_ONE);
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, (float*)VEC3_ONE);
+				glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, (float*)VEC3_ONE);
+				glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), 1.f);
+				glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), 1.f);
+
+				glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 0);
+			}
+
+			glDrawArrays(GL_TRIANGLES, (GLint)Submesh->Index, (GLsizei)Submesh->VertexCount);
+		}
+	}
+	else
+	{
+		glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, Entity->Color);
+		glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, Entity->Color);
+		glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, (float*)VEC3_ONE);
+		glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), 1.f);
+		glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), 1.f);
+		glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 0);
+
+		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)ModelInfo->VertexCount);
+	}
 }
 
 void ogt_set_entity_model(Entity_t* Entity, const char* Path)

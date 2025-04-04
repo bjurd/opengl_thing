@@ -8,6 +8,10 @@ out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoord;
 out vec3 MaterialColor;
+out vec3 MaterialAmbient;
+out vec3 MaterialDiffuse;
+out vec3 MaterialSpecular;
+out float MaterialShininess;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -23,6 +27,10 @@ void main()
 
 	TexCoord = aTexCoord;
 	MaterialColor = aMaterialColor;
+	MaterialAmbient = aMaterialColor.xyz;
+	MaterialDiffuse = aMaterialColor.xyz;
+	MaterialSpecular = aMaterialColor.xyz;
+	MaterialShininess = 32.0;
 
 	gl_Position = projection * view * worldPos;
 }

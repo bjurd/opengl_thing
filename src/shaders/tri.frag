@@ -5,6 +5,10 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoord;
 in vec3 MaterialColor;
+in vec3 MaterialAmbient;
+in vec3 MaterialDiffuse;
+in vec3 MaterialSpecular;
+in float MaterialShininess;
 
 uniform int useTexture;
 uniform sampler2D ourTexture;
@@ -12,6 +16,7 @@ uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
 uniform vec3 objectColor;
+uniform float uMaterialAlpha;
 
 void main()
 {

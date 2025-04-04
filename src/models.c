@@ -51,7 +51,7 @@ void load_obj(ModelInfo_t* ModelInfo)
 		return;
 	}
 
-	size_t OutOffset = 0;
+	size_t Offset = 0;
 
 	for (size_t Face = 0; Face < Attributes.num_face_num_verts; Face++)
 	{
@@ -66,26 +66,23 @@ void load_obj(ModelInfo_t* ModelInfo)
 			tinyobj_vertex_index_t Index = Attributes.faces[(Face * 3) + Vert];
 
 			// pos
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 0];
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 1];
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 2];
+			Vertices[Offset++] = Attributes.vertices[(3 * Index.v_idx) + 0];
+			Vertices[Offset++] = Attributes.vertices[(3 * Index.v_idx) + 1];
+			Vertices[Offset++] = Attributes.vertices[(3 * Index.v_idx) + 2];
 
 			// normal
-			float nx = Attributes.normals[(3 * Index.vn_idx) + 0];
-			float ny = Attributes.normals[(3 * Index.vn_idx) + 1];
-			float nz = Attributes.normals[(3 * Index.vn_idx) + 2];
-			Vertices[OutOffset++] = nx;
-			Vertices[OutOffset++] = ny;
-			Vertices[OutOffset++] = nz;
+			Vertices[Offset++] = Attributes.normals[(3 * Index.vn_idx) + 0];
+			Vertices[Offset++] = Attributes.normals[(3 * Index.vn_idx) + 1];
+			Vertices[Offset++] = Attributes.normals[(3 * Index.vn_idx) + 2];
 
 			// tex
-			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 0];
-			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 1];
+			Vertices[Offset++] = Attributes.texcoords[(2 * Index.vt_idx) + 0];
+			Vertices[Offset++] = Attributes.texcoords[(2 * Index.vt_idx) + 1];
 
 			// material color
-			Vertices[OutOffset++] = MaterialColor[0];
-			Vertices[OutOffset++] = MaterialColor[1];
-			Vertices[OutOffset++] = MaterialColor[2];
+			Vertices[Offset++] = MaterialColor[0];
+			Vertices[Offset++] = MaterialColor[1];
+			Vertices[Offset++] = MaterialColor[2];
 		}
 	}
 
@@ -95,7 +92,7 @@ void load_obj(ModelInfo_t* ModelInfo)
 	{
 		OutMaterials = malloc(MaterialCount * sizeof(Material_t));
 
-		if (OutMaterials == NULL)
+		if (!OutMaterials)
 		{
 			printf("Failed to allocate materials for file '%s'\n", ModelInfo->ModelPath);
 
@@ -112,20 +109,76 @@ void load_obj(ModelInfo_t* ModelInfo)
 
 		for (size_t i = 0; i < MaterialCount; ++i)
 		{
-			tinyobj_material_t* LoadedMaterial = &Materials[i];
-			Material_t* Material = &OutMaterials[i];
+			tinyobj_material_t* In = &Materials[i];
+			Material_t* Out = &OutMaterials[i];
 
-			if (LoadedMaterial->diffuse_texname)
-				Material->TexturePath = strdup(LoadedMaterial->diffuse_texname);
+			if (In->diffuse_texname)
+				Out->TexturePath = strdup(In->diffuse_texname);
 
-			glm_vec3_copy(LoadedMaterial->ambient, Material->AmbientColor);
-			glm_vec3_copy(LoadedMaterial->diffuse, Material->DiffuseColor);
-			glm_vec3_copy(LoadedMaterial->specular, Material->SpecularColor);
-			Material->SpecularExponent = LoadedMaterial->shininess;
-			Material->Dissolve = LoadedMaterial->dissolve;
-			Material->Illumination = LoadedMaterial->illum;
+			glm_vec3_copy(In->ambient, Out->AmbientColor);
+			glm_vec3_copy(In->diffuse, Out->DiffuseColor);
+			glm_vec3_copy(In->specular, Out->SpecularColor);
+
+			Out->SpecularExponent = In->shininess;
+			Out->Dissolve = In->dissolve;
+			Out->Illumination = In->illum;
 		}
 	}
+
+	size_t* FaceCounts = calloc(MaterialCount, sizeof(size_t));
+
+	for (size_t Face = 0; Face < Attributes.num_face_num_verts; ++Face)
+	{
+		int MaterialID = Attributes.material_ids[Face];
+
+		if (MaterialID >= 0 && MaterialID < (int)MaterialCount)
+			FaceCounts[MaterialID]++;
+	}
+
+	size_t SubmeshCount = 0;
+
+	for (size_t i = 0; i < MaterialCount; ++i)
+		if (FaceCounts[i] > 0)
+			SubmeshCount++;
+
+	Mesh_t* Submeshes = NULL;
+
+	if (SubmeshCount > 0)
+	{
+		Submeshes = malloc(SubmeshCount * sizeof(Mesh_t));
+
+		if (!Submeshes)
+		{
+			printf("Failed to allocate submeshes for file '%s'\n", ModelInfo->ModelPath);
+
+			free(Vertices);
+			free(OutMaterials);
+			free(FaceCounts);
+
+			tinyobj_attrib_free(&Attributes);
+			tinyobj_shapes_free(Shapes, ShapeCount);
+			tinyobj_materials_free(Materials, MaterialCount);
+
+			return;
+		}
+
+		size_t Offset = 0;
+
+		for (size_t i = 0; i < MaterialCount; ++i)
+		{
+			if (FaceCounts[i] == 0)
+				continue;
+
+			Submeshes[ModelInfo->SubmeshCount].Index = Offset * 3;
+			Submeshes[ModelInfo->SubmeshCount].VertexCount = FaceCounts[i] * 3;
+			Submeshes[ModelInfo->SubmeshCount].Material = &OutMaterials[i];
+
+			Offset += FaceCounts[i];
+			ModelInfo->SubmeshCount++;
+		}
+	}
+
+	free(FaceCounts);
 
 	tinyobj_attrib_free(&Attributes);
 	tinyobj_shapes_free(Shapes, ShapeCount);
@@ -136,8 +189,7 @@ void load_obj(ModelInfo_t* ModelInfo)
 	ModelInfo->MeshCount = 1;
 	ModelInfo->MaterialCount = MaterialCount;
 	ModelInfo->Materials = OutMaterials;
-	ModelInfo->Submeshes = NULL;
-	ModelInfo->SubmeshCount = 0;
+	ModelInfo->Submeshes = Submeshes;
 }
 
 ModelInfo_t* ogt_get_model_info(const char* Path)
@@ -199,13 +251,14 @@ ModelInfo_t* ogt_get_model_info(const char* Path)
 	hashmap_set(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
 
 	printf(
-		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d\n",
+		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d Submeshes: %d\n",
 
 		Path,
 		ModelInfo->VertexCount,
 		ModelInfo->VertexCount * OBJ_CHUNK_SIZE,
 		ModelInfo->MeshCount,
-		ModelInfo->MaterialCount
+		ModelInfo->MaterialCount,
+		ModelInfo->SubmeshCount
 	);
 
 	return ModelInfo;
