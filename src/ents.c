@@ -218,7 +218,7 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 
 		if (UseTextureLoc)
 		{
-			if (ModelInfo->MaterialCount > 0)
+			if (ModelInfo->MaterialCount > 0 && ModelInfo->Materials[0].TextureID)
 			{
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);

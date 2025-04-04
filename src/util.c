@@ -230,6 +230,7 @@ float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t
 	if (MaterialCount > 0)
 	{
 		OutMaterials = malloc(MaterialCount * sizeof(Material_t));
+		memset(OutMaterials, 0, MaterialCount * sizeof(Material_t));
 
 		if (OutMaterials == NULL)
 		{
