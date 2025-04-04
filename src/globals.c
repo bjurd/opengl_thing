@@ -1,5 +1,6 @@
 #include "globals.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 
 GlobalVars_t* GlobalVars = NULL;

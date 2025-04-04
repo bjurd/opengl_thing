@@ -183,7 +183,7 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 		return;
 	}
 
-	EntityModelInfo_t* ModelInfo = Entity->ModelInfo;
+	ModelInfo_t* ModelInfo = Entity->ModelInfo;
 
 	if (!ModelInfo)
 	{
@@ -208,25 +208,32 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 
 	if (ShaderProgram)
 	{
-		unsigned int ObjectColorLoc = glGetUniformLocation(ShaderProgram, "objectColor");
-		unsigned int UseTextureLoc = glGetUniformLocation(ShaderProgram, "useTexture");
+		glUniform3fv(glGetUniformLocation(ShaderProgram, "objectColor"), 1, (float*)Entity->Color);
 
-		if (ObjectColorLoc)
+		Material_t* Material = ModelInfo->MaterialCount > 0 ? &ModelInfo->Materials[0] : NULL;
+
+		if (Material && Material->TextureID)
 		{
-			glUniform3fv(ObjectColorLoc, 1, (float*)Entity->Color);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, Material->AmbientColor);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, Material->DiffuseColor);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, Material->SpecularColor);
+			glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), Material->SpecularExponent);
+			glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), Material->Dissolve);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, Material->TextureID);
+
+			glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 1);
 		}
-
-		if (UseTextureLoc)
+		else
 		{
-			if (ModelInfo->MaterialCount > 0 && ModelInfo->Materials[0].TextureID)
-			{
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, ModelInfo->Materials[0].TextureID);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialAmbient"), 1, (float*)VEC3_ONE);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialDiffuse"), 1, (float*)VEC3_ONE);
+			glUniform3fv(glGetUniformLocation(ShaderProgram, "MaterialSpecular"), 1, (float*)VEC3_ONE);
+			glUniform1f(glGetUniformLocation(ShaderProgram, "MaterialShininess"), 1);
+			glUniform1f(glGetUniformLocation(ShaderProgram, "uMaterialAlpha"), 1);
 
-				glUniform1i(UseTextureLoc, 1);
-			}
-			else
-				glUniform1i(UseTextureLoc, 0);
+			glUniform1i(glGetUniformLocation(ShaderProgram, "useTexture"), 0);
 		}
 	}
 
@@ -248,77 +255,6 @@ void ogt_render_entity_basic(Entity_t* Entity, float DeltaTime)
 	glDrawArrays(GL_TRIANGLES, 0, ModelInfo->VertexCount);
 }
 
-EntityModelInfo_t* ogt_get_model_info(const char* Path)
-{
-	uintptr_t Existing;
-
-	if (hashmap_get(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), &Existing))
-		return (EntityModelInfo_t*)Existing;
-
-	EntityModelInfo_t* ModelInfo = (EntityModelInfo_t*)malloc(sizeof(EntityModelInfo_t));
-
-	if (!ModelInfo)
-	{
-		printf("Failed to allocate model info for '%s'\n", Path);
-
-		return NULL;
-	}
-
-	ModelInfo->ModelPath = Path;
-	ModelInfo->VAO = 0;
-	ModelInfo->VBO = 0;
-
-	ModelInfo->Vertices = load_obj(ModelInfo->ModelPath, &ModelInfo->VertexCount, &ModelInfo->MeshCount, &ModelInfo->MaterialCount, &ModelInfo->Materials);
-
-	if (!ModelInfo->Vertices)
-	{
-		printf("Failed to load model for '%s'\n", Path);
-
-		return NULL;
-	}
-
-	for (size_t i = 0; i < ModelInfo->MaterialCount; ++i)
-	{
-		Material_t* Material = &ModelInfo->Materials[i];
-
-		if (Material->TexturePath)
-			Material->TextureID = create_texture(Material->TexturePath);
-	}
-
-	glGenVertexArrays(1, &ModelInfo->VAO);
-	glGenBuffers(1, &ModelInfo->VBO);
-
-	glBindVertexArray(ModelInfo->VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, ModelInfo->VBO);
-	glBufferData(GL_ARRAY_BUFFER, ModelInfo->VertexCount * OBJ_CHUNK_SIZE, ModelInfo->Vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, OBJ_CHUNK_SIZE, (void*)(8 * sizeof(float)));
-	glEnableVertexAttribArray(3);
-
-	hashmap_set(GlobalVars->EntityManager->EntityModelMap, Path, strlen(Path), (uintptr_t)ModelInfo);
-
-	printf(
-		"Loaded Model for '%s' - Vertices: %d Size: %d Meshes: %d Materials: %d\n",
-
-		Path,
-		ModelInfo->VertexCount,
-		ModelInfo->VertexCount * OBJ_CHUNK_SIZE,
-		ModelInfo->MeshCount,
-		ModelInfo->MaterialCount
-	);
-
-	return ModelInfo;
-}
-
 void ogt_set_entity_model(Entity_t* Entity, const char* Path)
 {
 	if (!Entity->Valid)
@@ -327,7 +263,7 @@ void ogt_set_entity_model(Entity_t* Entity, const char* Path)
 		return;
 	}
 
-	EntityModelInfo_t* ModelInfo = ogt_get_model_info(Path);
+	ModelInfo_t* ModelInfo = ogt_get_model_info(Path);
 
 	if (!ModelInfo)
 	{

@@ -9,9 +9,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define TINYOBJ_LOADER_C_IMPLEMENTATION
-#include <tinyobj_loader_c.h>
-
 #include "globals.h"
 
 void read_file(const char* Path, char** Data, size_t* Length)
@@ -146,128 +143,6 @@ unsigned int create_texture(const char* Path)
 	stbi_image_free(Data);
 
 	return Texture;
-}
-
-static void get_file_data(void* _, const char* Path, const int IsMaterial, const char* OBJPath, char** Data, size_t* Length)
-{
-	read_file(Path, Data, Length);
-}
-
-float* load_obj(const char* Path, size_t* VertexCount, size_t* MeshCount, size_t* MaterialCountOut, Material_t** MaterialsOut)
-{
-	*VertexCount = 0;
-	*MeshCount = 0;
-	*MaterialCountOut = 0;
-	*MaterialsOut = NULL;
-
-	tinyobj_attrib_t Attributes;
-	tinyobj_shape_t* Shapes;
-	size_t ShapeCount;
-	tinyobj_material_t* Materials;
-	size_t MaterialCount;
-
-	if (tinyobj_parse_obj(&Attributes, &Shapes, &ShapeCount, &Materials, &MaterialCount, Path, get_file_data, NULL, TINYOBJ_FLAG_TRIANGULATE) != TINYOBJ_SUCCESS)
-	{
-		printf("Failed to read file '%s'\n", Path);
-
-		return NULL;
-	}
-
-	size_t TotalVertices = Attributes.num_face_num_verts * 3;
-	float* Vertices = malloc(TotalVertices * OBJ_CHUNK_SIZE);
-
-	if (!Vertices)
-	{
-		printf("Failed to allocate for file '%s'\n", Path);
-
-		tinyobj_attrib_free(&Attributes);
-		tinyobj_shapes_free(Shapes, ShapeCount);
-		tinyobj_materials_free(Materials, MaterialCount);
-
-		return NULL;
-	}
-
-	size_t OutOffset = 0;
-
-	for (size_t Face = 0; Face < Attributes.num_face_num_verts; Face++)
-	{
-		int MaterialID = Attributes.material_ids[Face];
-		vec3 MaterialColor = { 1.f, 1.f, 1.f };
-
-		if (MaterialID >= 0 && MaterialID < (int)MaterialCount)
-			glm_vec3_copy(Materials[MaterialID].diffuse, MaterialColor);
-
-		for (int Vert = 0; Vert < 3; ++Vert)
-		{
-			tinyobj_vertex_index_t Index = Attributes.faces[(Face * 3) + Vert];
-
-			// pos
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 0];
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 1];
-			Vertices[OutOffset++] = Attributes.vertices[(3 * Index.v_idx) + 2];
-
-			// normal
-			float nx = Attributes.normals[(3 * Index.vn_idx) + 0];
-			float ny = Attributes.normals[(3 * Index.vn_idx) + 1];
-			float nz = Attributes.normals[(3 * Index.vn_idx) + 2];
-			Vertices[OutOffset++] = nx;
-			Vertices[OutOffset++] = ny;
-			Vertices[OutOffset++] = nz;
-
-			// tex
-			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 0];
-			Vertices[OutOffset++] = Attributes.texcoords[(2 * Index.vt_idx) + 1];
-
-			// material color
-			Vertices[OutOffset++] = MaterialColor[0];
-			Vertices[OutOffset++] = MaterialColor[1];
-			Vertices[OutOffset++] = MaterialColor[2];
-		}
-	}
-
-	Material_t* OutMaterials = NULL;
-
-	if (MaterialCount > 0)
-	{
-		OutMaterials = malloc(MaterialCount * sizeof(Material_t));
-		memset(OutMaterials, 0, MaterialCount * sizeof(Material_t));
-
-		if (OutMaterials == NULL)
-		{
-			printf("Failed to allocate materials for file '%s'\n", Path);
-
-			free(Vertices);
-
-			tinyobj_attrib_free(&Attributes);
-			tinyobj_shapes_free(Shapes, ShapeCount);
-			tinyobj_materials_free(Materials, MaterialCount);
-
-			return NULL;
-		}
-
-		for (size_t i = 0; i < MaterialCount; ++i)
-		{
-			if (Materials[i].diffuse_texname)
-				OutMaterials[i].TexturePath = strdup(Materials[i].diffuse_texname);
-			else
-				OutMaterials[i].TexturePath = NULL;
-
-			OutMaterials[i].Color[0] = Materials[i].diffuse[0];
-			OutMaterials[i].Color[1] = Materials[i].diffuse[1];
-			OutMaterials[i].Color[2] = Materials[i].diffuse[2];
-		}
-	}
-
-	tinyobj_attrib_free(&Attributes);
-	tinyobj_shapes_free(Shapes, ShapeCount);
-	tinyobj_materials_free(Materials, MaterialCount);
-
-	*VertexCount = TotalVertices;
-	*MeshCount = 1;
-	*MaterialCountOut = MaterialCount;
-	*MaterialsOut = OutMaterials;
-
-	return Vertices;
 }
 
 // https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/mathlib/mathlib_base.cpp#L535

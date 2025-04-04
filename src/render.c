@@ -5,6 +5,7 @@
 #include <cglm/cglm.h>
 
 #include "globals.h"
+#include "util.h"
 
 void ogt_setup_view(RenderView_t* View, vec3 Origin, vec3 Forward, float FOV, float NearZ, float FarZ)
 {
