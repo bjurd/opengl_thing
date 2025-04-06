@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "util.h"
 #include "ents.h"
+#include "entfactory.h"
 #include "render.h"
 #include "physics.h"
 
@@ -102,35 +103,6 @@ void OnMouseMove(GLFWwindow* Window, double MouseX, double MouseY)
 	angles_to_vec3(Yaw, Pitch, View.Forward, Right, Up);
 }
 
-void TestOnCreation(Entity_t* self)
-{
-	printf("Created %d\n", self->Index);
-}
-
-void TestOnDeletion(Entity_t* self)
-{
-	printf("Deleted %d\n", self->Index);
-}
-
-void TestPhysicsInit(Entity_t* self)
-{
-	printf("Setup physics for %d\n", self->Index);
-}
-
-void TestThink(Entity_t* self, float DeltaTime)
-{
-	// if (self->Index == 0)
-	// {
-	// 	printf("0 is at: %f %f %f - %f %f %f\n", self->Origin[0], self->Origin[1], self->Origin[2], self->Angles[0], self->Angles[1], self->Angles[2]);
-	// }
-}
-
-void TestRender(Entity_t* self, float DeltaTime)
-{
-	//printf("Rendering %d: %f\n", self->Index, DeltaTime);
-	ogt_render_entity_basic(self, DeltaTime);
-}
-
 int main()
 {
 	glfwInit();
@@ -193,33 +165,29 @@ int main()
 	attach_shader(&FragmentShader, ShaderProgram);
 	glLinkProgram(ShaderProgram);
 
-	EntityCallbacks_t* Callbacks;
-	if (!( Callbacks = ogt_init_entity_callbacks()))
+	if (!ogt_init_entities())
 	{
 		return -1;
 	}
 
-	Callbacks->OnCreation = TestOnCreation;
-	Callbacks->OnDeletion = TestOnDeletion;
-	Callbacks->InitPhysics = TestPhysicsInit;
-	Callbacks->Think = TestThink;
-	Callbacks->Render = TestRender;
+	EntityClass_t* Monkey = ogt_find_entity_class("monkey");
 
-	EntityClass_t* Monkey = ogt_register_entity_class("monkey", Callbacks);
+	if (Monkey)
+	{
+		Entity_t* MokeA = ogt_create_entity_ex(Monkey);
+		Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+		// Entity_t* Gooba = ogt_create_entity_ex(Monkey);
 
-	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
-	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
-	// Entity_t* Gooba = ogt_create_entity_ex(Monkey);
+		ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
+		ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
+		// ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
 
-	ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
-	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
-	// ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
+		dBodySetPosition(MokeA->Body, 0, 0, -15);
+		dBodySetAngularVel(MokeA->Body, 0.5, 0.0, 0.0);
 
-	dBodySetPosition(MokeA->Body, 0, 0, -15);
-	dBodySetAngularVel(MokeA->Body, 0.5, 0.0, 0.0);
-
-	dBodySetPosition(MokeB->Body, 0, 3, -15);
-	dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
+		dBodySetPosition(MokeB->Body, 0, 3, -15);
+		dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
+	}
 
 	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
