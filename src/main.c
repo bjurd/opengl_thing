@@ -200,7 +200,7 @@ int main()
 
 	ogt_set_entity_model(MokeA, "../src/models/hahamonkey.obj");
 	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
-	ogt_set_entity_model(Gooba, "../src/models/wahamonkey.obj");
+	ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
 
 	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
