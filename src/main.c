@@ -114,10 +114,10 @@ void TestOnDeletion(Entity_t* self)
 
 void TestThink(Entity_t* self, float DeltaTime)
 {
-	if (self->Index == 0)
-	{
-		printf("0 is at: %f %f %f - %f %f %f\n", self->Origin[0], self->Origin[1], self->Origin[2], self->Angles[0], self->Angles[1], self->Angles[2]);
-	}
+	// if (self->Index == 0)
+	// {
+	// 	printf("0 is at: %f %f %f - %f %f %f\n", self->Origin[0], self->Origin[1], self->Origin[2], self->Angles[0], self->Angles[1], self->Angles[2]);
+	// }
 }
 
 void TestRender(Entity_t* self, float DeltaTime)
@@ -191,15 +191,18 @@ int main()
 	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
 
 	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
-	// Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
 	// Entity_t* Gooba = ogt_create_entity_ex(Monkey);
 
 	ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
-	// ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
+	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
 	// ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
 
 	dBodySetPosition(MokeA->Body, 0, 0, -15);
 	dBodySetAngularVel(MokeA->Body, 0.5, 0.0, 0.0);
+
+	dBodySetPosition(MokeB->Body, 0, 3, -15);
+	dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
 
 	dCreatePlane(GlobalVars->PhysicsManager->Space, 0, 1, 0, -15); // floor
 
