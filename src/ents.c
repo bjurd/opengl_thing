@@ -122,18 +122,6 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	memset(&Entity->Angles, 0, sizeof(vec3));
 	glm_vec3_one(Entity->Color);
 
-	Entity->Body = dBodyCreate(GlobalVars->PhysicsManager->World);
-	dBodySetPosition(Entity->Body, Entity->Origin[0], Entity->Origin[1], Entity->Origin[2]);
-	dBodySetLinearVel(Entity->Body, 0, 0, 0);
-	dBodySetAngularVel(Entity->Body, 0, 0, 0);
-
-	dMass Mass;
-	dMassSetBox(&Mass, 1.0, 1.0, 1.0, 1.0);
-	dBodySetMass(Entity->Body, &Mass);
-
-	Entity->Geometry = dCreateBox(GlobalVars->PhysicsManager->Space, 1.0, 1.0, 1.0);
-	dGeomSetBody(Entity->Geometry, Entity->Body);
-
 	GlobalVars->EntityManager->Entities[EntityIndex] = Entity;
 
 	if (Entity->ClassInfo->Callbacks->OnCreation)

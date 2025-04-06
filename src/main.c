@@ -170,26 +170,27 @@ int main()
 		return -1;
 	}
 
+	Entity_t* World = ogt_create_entity("world");
 	EntityClass_t* Monkey = ogt_find_entity_class("monkey");
 
 	if (Monkey)
 	{
 		Entity_t* MokeA = ogt_create_entity_ex(Monkey);
-		Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+		//Entity_t* MokeB = ogt_create_entity_ex(Monkey);
 		// Entity_t* Gooba = ogt_create_entity_ex(Monkey);
 
-		ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
-		ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
+		//ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
+		//ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
 		// ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
 
-		dBodySetPosition(MokeA->Body, 0, 0, -15);
+		dBodySetPosition(MokeA->Body, 0, 10, 0);
 		dBodySetAngularVel(MokeA->Body, 0.5, 0.0, 0.0);
 
-		dBodySetPosition(MokeB->Body, 0, 3, -15);
-		dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
+		//dBodySetPosition(MokeB->Body, 0, 13, -5);
+		//dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
 	}
 
-	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
+	ogt_setup_view(&View, (vec3){ 0.f, 10.f, 10.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
 	while (!glfwWindowShouldClose(Window))
 	{
