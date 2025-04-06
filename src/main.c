@@ -5,6 +5,7 @@
 #include <cglm/cglm.h>
 #include <cglm/types.h>
 #include <hashmap/map.h>
+#include <ode/ode.h>
 
 #include "globals.h"
 #include "util.h"

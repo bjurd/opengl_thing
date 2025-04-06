@@ -19,6 +19,8 @@ file(GLOB_RECURSE HEADERS
 include_directories("external/glfw-3.4/include")
 link_directories("external/glfw-3.4/lib-mingw-w64")
 include_directories("external/cglm-0.9.6/include")
+include_directories("external/ode/include")
+link_directories("external/ode")
 
 include_directories("include")
 include_directories("include/glad/include")
@@ -32,7 +34,7 @@ set_target_properties(
 	PREFIX ""
 )
 
-target_link_libraries(${PROJECT_NAME} glfw3)
+target_link_libraries(${PROJECT_NAME} glfw3 libode_double)
 
 install(
 	TARGETS ${PROJECT_NAME}
