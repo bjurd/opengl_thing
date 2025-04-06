@@ -5,12 +5,12 @@
 #include <cglm/cglm.h>
 #include <cglm/types.h>
 #include <hashmap/map.h>
-#include <ode/ode.h>
 
 #include "globals.h"
 #include "util.h"
 #include "ents.h"
 #include "render.h"
+#include "physics.h"
 
 float DeltaTime = 0.0f;
 float LastFrame = 0.0f;
@@ -114,7 +114,10 @@ void TestOnDeletion(Entity_t* self)
 
 void TestThink(Entity_t* self, float DeltaTime)
 {
-	//printf("Thinking %d: %f\n", self->Index, DeltaTime);
+	if (self->Index == 0)
+	{
+		printf("0 is at: %f %f %f - %f %f %f\n", self->Origin[0], self->Origin[1], self->Origin[2], self->Angles[0], self->Angles[1], self->Angles[2]);
+	}
 }
 
 void TestRender(Entity_t* self, float DeltaTime)
@@ -188,20 +191,17 @@ int main()
 	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
 
 	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
-	MokeA->Origin[2] = -15;
+	// Entity_t* MokeB = ogt_create_entity_ex(Monkey);
+	// Entity_t* Gooba = ogt_create_entity_ex(Monkey);
 
-	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
-	MokeB->Origin[0] = 5;
-	MokeB->Origin[2] = -15;
+	ogt_set_entity_model(MokeA, "../src/models/spongekey.obj");
+	// ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
+	// ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
 
-	Entity_t* Gooba = ogt_create_entity_ex(Monkey);
-	Gooba->Origin[0] = -5;
-	Gooba->Origin[2] = -15;
-	//Gooba->Angles[1] = 90.f;
+	dBodySetPosition(MokeA->Body, 0, 0, -15);
+	dBodySetAngularVel(MokeA->Body, 0.5, 0.0, 0.0);
 
-	ogt_set_entity_model(MokeA, "../src/models/hahamonkey.obj");
-	ogt_set_entity_model(MokeB, "../src/models/monkey.obj");
-	ogt_set_entity_model(Gooba, "../src/models/spongekey.obj");
+	dCreatePlane(GlobalVars->PhysicsManager->Space, 0, 1, 0, -15); // floor
 
 	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
@@ -214,6 +214,8 @@ int main()
 		ProcessInput(Window);
 
 		ogt_think_entities(DeltaTime);
+
+		ogt_simulate_physics(DeltaTime);
 
 		glUseProgram(ShaderProgram);
 		ogt_render_view(&View, DeltaTime);

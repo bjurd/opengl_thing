@@ -20,8 +20,11 @@ void attach_shader(Shader_t* Shader, unsigned int ShaderProgram);
 
 unsigned int create_texture(const char* Path);
 
+void normalize_angle(float* Angle);
+void normalize_angles(vec3 Angles);
 void vec3_to_angles(const vec3 Forward, float* Yaw, float* Pitch);
 void angles_to_vec3(float Yaw, float Pitch, vec3 Forward, vec3 Right, vec3 Up);
 void vec3_directionals(vec3 Forward, vec3 Right, vec3 Up);
+void quat_to_euler_deg(const versor Q, vec3 Angles);
 
 #endif

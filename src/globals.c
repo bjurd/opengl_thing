@@ -21,4 +21,5 @@ void ogt_init_globals()
 	GlobalVars->EntityManager = NULL;
 
 	ogt_init_entity_system();
+	ogt_init_physics();
 }

@@ -5,6 +5,7 @@
 #include <cglm/types.h>
 
 #include "models.h"
+#include "physics.h"
 
 #define MAX_ENTITIES 255
 
@@ -40,6 +41,9 @@ struct Entity_t
 	DeletionFn OnDeletion;
 	ThinkFn Think;
 	RenderFn Render;
+
+	dBodyID Body;
+	dGeomID Geometry;
 };
 
 typedef struct

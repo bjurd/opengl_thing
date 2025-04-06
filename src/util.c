@@ -145,6 +145,18 @@ unsigned int create_texture(const char* Path)
 	return Texture;
 }
 
+void normalize_angle(float* Angle)
+{
+	*Angle = fmodf(*Angle + 180.f, 360.f) - 180.f;
+}
+
+void normalize_angles(vec3 Angles)
+{
+	normalize_angle(&Angles[0]);
+	normalize_angle(&Angles[1]);
+	normalize_angle(&Angles[2]);
+}
+
 // https://github.com/lua9520/source-engine-2018-hl2_src/blob/3bf9df6b2785fa6d951086978a3e66f49427166a/mathlib/mathlib_base.cpp#L535
 void vec3_to_angles(const vec3 Forward, float* Yaw, float* Pitch)
 {
@@ -160,10 +172,16 @@ void vec3_to_angles(const vec3 Forward, float* Yaw, float* Pitch)
 
 		*Pitch = glm_deg(asinf(Forward[1]));
 	}
+
+	normalize_angle(Yaw);
+	normalize_angle(Pitch);
 }
 
 void angles_to_vec3(float Yaw, float Pitch, vec3 Forward, vec3 Right, vec3 Up)
 {
+	normalize_angle(&Yaw);
+	normalize_angle(&Pitch);
+
 	Yaw = glm_rad(Yaw);
 	Pitch = glm_rad(Pitch);
 
@@ -186,4 +204,31 @@ void vec3_directionals(vec3 Forward, vec3 Right, vec3 Up)
 	float Yaw, Pitch;
 	vec3_to_angles(Forward, &Yaw, &Pitch);
 	angles_to_vec3(Yaw, Pitch, Forward, Right, Up);
+}
+
+void quat_to_euler_deg(const versor Q, vec3 Angles) // Found this online turns a quaternion into euler angles via math I don't understand :^)
+{
+	float x = Q[0], y = Q[1], z = Q[2], w = Q[3];
+
+	float sinr_cosp = 2.f * (w * x + y * z);
+	float cosr_cosp = 1.f - 2.f * (x * x + y * y);
+	float roll = atan2f(sinr_cosp, cosr_cosp);
+
+	float sinp = 2.f * (w * y - z * x);
+	float pitch;
+
+	if (fabsf(sinp) >= 1.f)
+		pitch = copysignf(GLM_PI_2f, sinp);
+	else
+		pitch = asinf(sinp);
+
+	float siny_cosp = 2.f * (w * z + x * y);
+	float cosy_cosp = 1.f - 2.f * (y * y + z * z);
+	float yaw = atan2f(siny_cosp, cosy_cosp);
+
+	Angles[0] = glm_deg(pitch);
+	Angles[1] = glm_deg(yaw);
+	Angles[2] = glm_deg(roll);
+
+	normalize_angles(Angles);
 }

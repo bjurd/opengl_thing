@@ -10,6 +10,7 @@
 #include <cglm/types.h>
 
 #include "globals.h"
+#include "util.h"
 
 void ogt_init_entity_system()
 {
@@ -113,6 +114,18 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	Entity->Think = EntityClass->Think;
 	Entity->Render = EntityClass->Render;
 
+	Entity->Body = dBodyCreate(GlobalVars->PhysicsManager->World);
+	dBodySetPosition(Entity->Body, Entity->Origin[0], Entity->Origin[1], Entity->Origin[2]);
+	dBodySetLinearVel(Entity->Body, 0, 0, 0);
+	dBodySetAngularVel(Entity->Body, 0, 0, 0);
+
+	dMass Mass;
+	dMassSetBox(&Mass, 1.0, 1.0, 1.0, 1.0);
+	dBodySetMass(Entity->Body, &Mass);
+
+	Entity->Geometry = dCreateBox(GlobalVars->PhysicsManager->Space, 1.0, 1.0, 1.0);
+	dGeomSetBody(Entity->Geometry, Entity->Body);
+
 	GlobalVars->EntityManager->Entities[EntityIndex] = Entity;
 
 	if (Entity->OnCreation)
@@ -155,6 +168,29 @@ void ogt_delete_entity(Entity_t* Entity)
 
 void ogt_think_entities(float DeltaTime)
 {
+	for (unsigned int i = 0; i < GlobalVars->EntityManager->EntIndex; ++i)
+	{
+		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
+
+		if (Entity->Valid && Entity->Body)
+		{
+			const dReal* Pos = dBodyGetPosition(Entity->Body);
+			glm_vec3_copy((vec3){ Pos[0], Pos[1], Pos[2] }, Entity->Origin);
+
+			const dReal* AngularVelocity = dBodyGetAngularVel(Entity->Body);
+			dBodySetAngularVel(Entity->Body, AngularVelocity[0] * 0.98f, AngularVelocity[1] * 0.98f, AngularVelocity[2] * 0.98f); // SLOW THE FUCK DOWN
+
+			const dReal* Rot = dBodyGetQuaternion(Entity->Body);
+			versor Q = { Rot[1], Rot[2], Rot[3], Rot[0] };
+
+			vec3 Euler;
+			quat_to_euler_deg(Q, Euler);
+			glm_vec3_scale(Euler, (float)(180.0 / M_PI), Entity->Angles);
+
+			normalize_angles(Entity->Angles);
+		}
+	}
+
 	for (unsigned int i = 0; i < GlobalVars->EntityManager->EntIndex; ++i)
 	{
 		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
