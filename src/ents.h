@@ -12,17 +12,24 @@
 typedef struct Entity_t Entity_t;
 typedef void (*CreationFn)(Entity_t* self);
 typedef void (*DeletionFn)(Entity_t* self);
+typedef void (*InitPhysicsFn)(Entity_t* self);
 typedef void (*ThinkFn)(Entity_t* self, float DeltaTime);
 typedef void (*RenderFn)(Entity_t* self, float DeltaTime);
 
 typedef struct
 {
-	const char* Name;
-
 	CreationFn OnCreation;
 	DeletionFn OnDeletion;
+	InitPhysicsFn InitPhysics;
 	ThinkFn Think;
 	RenderFn Render;
+} EntityCallbacks_t;
+
+typedef struct
+{
+	const char* Name;
+
+	EntityCallbacks_t* Callbacks;
 } EntityClass_t;
 
 struct Entity_t
@@ -36,11 +43,6 @@ struct Entity_t
 	vec3 Origin;
 	vec3 Angles;
 	vec3 Color;
-
-	CreationFn OnCreation;
-	DeletionFn OnDeletion;
-	ThinkFn Think;
-	RenderFn Render;
 
 	dBodyID Body;
 	dGeomID Geometry;
@@ -58,7 +60,8 @@ typedef struct
 } EntityManager_t;
 
 void ogt_init_entity_system();
-EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreation, DeletionFn OnDeletion, ThinkFn Think, RenderFn Render);
+EntityCallbacks_t* ogt_init_entity_callbacks();
+EntityClass_t* ogt_register_entity_class(const char* Class, EntityCallbacks_t* Callbacks);
 EntityClass_t* ogt_find_entity_class(const char* Class);
 Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass);
 Entity_t* ogt_create_entity(const char* Class);

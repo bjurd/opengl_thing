@@ -31,7 +31,23 @@ void ogt_init_entity_system()
 		GlobalVars->EntityManager->FreeEntIndices[i] = i;
 }
 
-EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreation, DeletionFn OnDeletion, ThinkFn Think, RenderFn Render)
+EntityCallbacks_t* ogt_init_entity_callbacks()
+{
+	EntityCallbacks_t* Callbacks = (EntityCallbacks_t*)malloc(sizeof(EntityCallbacks_t));
+
+	if (!Callbacks)
+	{
+		printf("Failed to allocate for entity callbacks!\n");
+
+		return NULL;
+	}
+
+	memset(Callbacks, 0, sizeof(Callbacks));
+
+	return Callbacks;
+}
+
+EntityClass_t* ogt_register_entity_class(const char* Class, EntityCallbacks_t* Callbacks)
 {
 	EntityClass_t* Existing = ogt_find_entity_class(Class);
 
@@ -53,10 +69,7 @@ EntityClass_t* ogt_register_entity_class(const char* Class, CreationFn OnCreatio
 
 	EntityClass->Name = Class;
 
-	EntityClass->OnCreation = *OnCreation;
-	EntityClass->OnDeletion = *OnDeletion;
-	EntityClass->Think = *Think;
-	EntityClass->Render = *Render;
+	EntityClass->Callbacks = Callbacks;
 
 	hashmap_set(GlobalVars->EntityManager->EntityClassMap, Class, strlen(Class), (uintptr_t)EntityClass);
 
@@ -109,11 +122,6 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	memset(&Entity->Angles, 0, sizeof(vec3));
 	glm_vec3_one(Entity->Color);
 
-	Entity->OnCreation = EntityClass->OnCreation;
-	Entity->OnDeletion = EntityClass->OnDeletion;
-	Entity->Think = EntityClass->Think;
-	Entity->Render = EntityClass->Render;
-
 	Entity->Body = dBodyCreate(GlobalVars->PhysicsManager->World);
 	dBodySetPosition(Entity->Body, Entity->Origin[0], Entity->Origin[1], Entity->Origin[2]);
 	dBodySetLinearVel(Entity->Body, 0, 0, 0);
@@ -128,8 +136,11 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 
 	GlobalVars->EntityManager->Entities[EntityIndex] = Entity;
 
-	if (Entity->OnCreation)
-		Entity->OnCreation(Entity);
+	if (Entity->ClassInfo->Callbacks->OnCreation)
+		Entity->ClassInfo->Callbacks->OnCreation(Entity);
+
+	if (Entity->ClassInfo->Callbacks->InitPhysics)
+		Entity->ClassInfo->Callbacks->InitPhysics(Entity);
 
 	return Entity;
 }
@@ -152,8 +163,8 @@ void ogt_delete_entity(Entity_t* Entity)
 {
 	if (Entity->Valid)
 	{
-		if (Entity->OnDeletion)
-			Entity->OnDeletion(Entity);
+		if (Entity->ClassInfo->Callbacks->OnDeletion)
+			Entity->ClassInfo->Callbacks->OnDeletion(Entity);
 
 		unsigned int EntityIndex = Entity->Index;
 
@@ -195,8 +206,8 @@ void ogt_think_entities(float DeltaTime)
 	{
 		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
 
-		if (Entity->Valid && Entity->Think)
-			Entity->Think(Entity, DeltaTime);
+		if (Entity->Valid && Entity->ClassInfo->Callbacks->Think)
+		Entity->ClassInfo->Callbacks->Think(Entity, DeltaTime);
 	}
 }
 
@@ -206,8 +217,8 @@ void ogt_render_entities(float DeltaTime)
 	{
 		Entity_t* Entity = GlobalVars->EntityManager->Entities[i];
 
-		if (Entity->Valid && Entity->Render)
-			Entity->Render(Entity, DeltaTime);
+		if (Entity->Valid && Entity->ClassInfo->Callbacks->Render)
+			Entity->ClassInfo->Callbacks->Render(Entity, DeltaTime);
 	}
 }
 

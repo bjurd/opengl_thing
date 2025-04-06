@@ -112,6 +112,11 @@ void TestOnDeletion(Entity_t* self)
 	printf("Deleted %d\n", self->Index);
 }
 
+void TestPhysicsInit(Entity_t* self)
+{
+	printf("Setup physics for %d\n", self->Index);
+}
+
 void TestThink(Entity_t* self, float DeltaTime)
 {
 	// if (self->Index == 0)
@@ -188,7 +193,19 @@ int main()
 	attach_shader(&FragmentShader, ShaderProgram);
 	glLinkProgram(ShaderProgram);
 
-	EntityClass_t* Monkey = ogt_register_entity_class("monkey", TestOnCreation, TestOnDeletion, TestThink, TestRender);
+	EntityCallbacks_t* Callbacks;
+	if (!( Callbacks = ogt_init_entity_callbacks()))
+	{
+		return -1;
+	}
+
+	Callbacks->OnCreation = TestOnCreation;
+	Callbacks->OnDeletion = TestOnDeletion;
+	Callbacks->InitPhysics = TestPhysicsInit;
+	Callbacks->Think = TestThink;
+	Callbacks->Render = TestRender;
+
+	EntityClass_t* Monkey = ogt_register_entity_class("monkey", Callbacks);
 
 	Entity_t* MokeA = ogt_create_entity_ex(Monkey);
 	Entity_t* MokeB = ogt_create_entity_ex(Monkey);
@@ -203,8 +220,6 @@ int main()
 
 	dBodySetPosition(MokeB->Body, 0, 3, -15);
 	dBodySetAngularVel(MokeB->Body, 0.5, 0.0, 0.0);
-
-	dCreatePlane(GlobalVars->PhysicsManager->Space, 0, 1, 0, -15); // floor
 
 	ogt_setup_view(&View, (vec3){ 0.f, 0.f, 3.f }, (vec3){ 0, 0, -1.f }, 45.f, .1f, 100.f);
 
