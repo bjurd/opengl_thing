@@ -118,6 +118,9 @@ Entity_t* ogt_create_entity_ex(EntityClass_t* EntityClass)
 	Entity->ClassInfo = EntityClass;
 	Entity->ModelInfo = NULL;
 
+	Entity->Body = 0;
+	Entity->Geometry = 0;
+
 	memset(&Entity->Origin, 0, sizeof(vec3));
 	memset(&Entity->Angles, 0, sizeof(vec3));
 	glm_vec3_one(Entity->Color);
